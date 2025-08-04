@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <QtInstallDir Condition="'$(QtInstallDir)' == ''">D:\QT\6.9.1\msvc2022_64</QtInstallDir>
+    <QtInstallDir Condition="'$(QtInstallDir)' == '' and '$(QTDIR)' != ''">$(QTDIR)</QtInstallDir>
+    <QtToolsPath Condition="'$(QtToolsPath)' == ''">$(QtInstallDir)\bin</QtToolsPath>
+  </PropertyGroup>
+  
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(QtInstallDir)\include;$(QtInstallDir)\include\QtCore;$(QtInstallDir)\include\QtGui;$(QtInstallDir)\include\QtWidgets;$(MSBuildProjectDirectory);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>QT_CORE_LIB;QT_GUI_LIB;QT_WIDGETS_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(QtInstallDir)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies Condition="'$(Configuration)' == 'Debug'">Qt6Cored.lib;Qt6Guid.lib;Qt6Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)' == 'Release'">Qt6Core.lib;Qt6Gui.lib;Qt6Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  
+  <!-- Qt UIC Target -->
+  <Target Name="QtUic" BeforeTargets="ClCompile">
+    <Exec Command="&quot;$(QtInstallDir)\bin\uic.exe&quot; &quot;$(MSBuildProjectDirectory)\Chess.ui&quot; -o &quot;$(MSBuildProjectDirectory)\ui_Chess.h&quot;" />
+  </Target>
+  
+  <!-- Qt MOC Target -->
+  <Target Name="QtMoc" BeforeTargets="ClCompile">
+    <Exec Command="&quot;$(QtInstallDir)\bin\moc.exe&quot; &quot;$(MSBuildProjectDirectory)\Chess.h&quot; -o &quot;$(MSBuildProjectDirectory)\moc_Chess.cpp&quot;" />
+  </Target>
+</Project>

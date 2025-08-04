@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/pieces/classic/red_king.svg</file>
+        <file>images/pieces/classic/red_advisor.svg</file>
+        <file>images/pieces/classic/red_bishop.svg</file>
+        <file>images/pieces/classic/red_knight.svg</file>
+        <file>images/pieces/classic/red_rook.svg</file>
+        <file>images/pieces/classic/red_cannon.svg</file>
+        <file>images/pieces/classic/red_pawn.svg</file>
+        <file>images/pieces/classic/black_king.svg</file>
+        <file>images/pieces/classic/black_advisor.svg</file>
+        <file>images/pieces/classic/black_bishop.svg</file>
+        <file>images/pieces/classic/black_knight.svg</file>
+        <file>images/pieces/classic/black_rook.svg</file>
+        <file>images/pieces/classic/black_cannon.svg</file>
+        <file>images/pieces/classic/black_pawn.svg</file>
+    </qresource>
+</RCC>
