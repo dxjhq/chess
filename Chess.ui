@@ -176,6 +176,9 @@ border: 2px solid black;</string>
     <addaction name="actionSave"/>
     <addaction name="actionSaveAs"/>
     <addaction name="separator"/>
+    <addaction name="actionImportPGN"/>
+    <addaction name="actionExportPGN"/>
+    <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -184,6 +187,21 @@ border: 2px solid black;</string>
     </property>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
+    <addaction name="separator"/>
+    <addaction name="actionCopyPosition"/>
+    <addaction name="actionPastePosition"/>
+    <addaction name="separator"/>
+    <addaction name="actionSetupPosition"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>查看</string>
+    </property>
+    <addaction name="actionShowCoordinates"/>
+    <addaction name="actionShowMoveHistory"/>
+    <addaction name="actionShowEvaluation"/>
+    <addaction name="separator"/>
+    <addaction name="actionFullScreen"/>
    </widget>
    <widget class="QMenu" name="menuGame">
     <property name="title">
@@ -191,16 +209,54 @@ border: 2px solid black;</string>
     </property>
     <addaction name="actionNewGame"/>
     <addaction name="actionFlipBoard"/>
+    <addaction name="separator"/>
+    <addaction name="actionConnection"/>
+    <addaction name="actionEngineMatch"/>
+    <addaction name="separator"/>
+    <addaction name="actionAnalyzePosition"/>
+    <addaction name="actionAnalyzeGame"/>
+   </widget>
+   <widget class="QMenu" name="menuEngine">
+    <property name="title">
+     <string>引擎</string>
+    </property>
+    <addaction name="actionEngineSettings"/>
+    <addaction name="actionLoadEngine"/>
+    <addaction name="separator"/>
+    <addaction name="actionStartEngine"/>
+    <addaction name="actionStopEngine"/>
+   </widget>
+   <widget class="QMenu" name="menuDatabase">
+    <property name="title">
+     <string>开局库</string>
+    </property>
+    <addaction name="actionOpenDatabase"/>
+    <addaction name="actionCreateDatabase"/>
+    <addaction name="separator"/>
+    <addaction name="actionSearchPosition"/>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>工具</string>
+    </property>
+    <addaction name="actionOptions"/>
+    <addaction name="actionStatistics"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>帮助</string>
     </property>
+    <addaction name="actionHelp"/>
+    <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menuView"/>
    <addaction name="menuGame"/>
+   <addaction name="menuEngine"/>
+   <addaction name="menuDatabase"/>
+   <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -210,19 +266,47 @@ border: 2px solid black;</string>
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionNew"/>
+   <addaction name="actionOpen"/>
+   <addaction name="actionSave"/>
+   <addaction name="separator"/>
+   <addaction name="actionUndo"/>
+   <addaction name="actionRedo"/>
+   <addaction name="separator"/>
+   <addaction name="actionNewGame"/>
+   <addaction name="actionFlipBoard"/>
+   <addaction name="separator"/>
+   <addaction name="actionConnection"/>
+   <addaction name="actionEngineMatch"/>
+   <addaction name="separator"/>
+   <addaction name="actionAnalyzePosition"/>
+   <addaction name="actionStartEngine"/>
+   <addaction name="actionStopEngine"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionNew">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/new.svg</normaloff>:/images/icons/new.svg</iconset>
+   </property>
    <property name="text">
     <string>新建</string>
    </property>
   </action>
   <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/open.svg</normaloff>:/images/icons/open.svg</iconset>
+   </property>
    <property name="text">
     <string>打开</string>
    </property>
   </action>
   <action name="actionSave">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/save.svg</normaloff>:/images/icons/save.svg</iconset>
+   </property>
    <property name="text">
     <string>保存</string>
    </property>
@@ -238,21 +322,37 @@ border: 2px solid black;</string>
    </property>
   </action>
   <action name="actionUndo">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/undo.svg</normaloff>:/images/icons/undo.svg</iconset>
+   </property>
    <property name="text">
     <string>撤销</string>
    </property>
   </action>
   <action name="actionRedo">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/redo.svg</normaloff>:/images/icons/redo.svg</iconset>
+   </property>
    <property name="text">
     <string>重做</string>
    </property>
   </action>
   <action name="actionNewGame">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/new_game.svg</normaloff>:/images/icons/new_game.svg</iconset>
+   </property>
    <property name="text">
     <string>新游戏</string>
    </property>
   </action>
   <action name="actionFlipBoard">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/flip_board.svg</normaloff>:/images/icons/flip_board.svg</iconset>
+   </property>
    <property name="text">
     <string>翻转棋盘</string>
    </property>
@@ -260,6 +360,234 @@ border: 2px solid black;</string>
   <action name="actionAbout">
    <property name="text">
     <string>关于</string>
+   </property>
+  </action>
+  <action name="actionConnection">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/connection.svg</normaloff>:/images/icons/connection.svg</iconset>
+   </property>
+   <property name="text">
+    <string>平台连线</string>
+   </property>
+   <property name="toolTip">
+    <string>连接到在线象棋平台</string>
+   </property>
+  </action>
+  <action name="actionImportPGN">
+   <property name="text">
+    <string>导入PGN</string>
+   </property>
+   <property name="toolTip">
+    <string>导入PGN格式的棋谱文件</string>
+   </property>
+  </action>
+  <action name="actionExportPGN">
+   <property name="text">
+    <string>导出PGN</string>
+   </property>
+   <property name="toolTip">
+    <string>导出当前棋谱为PGN格式</string>
+   </property>
+  </action>
+  <action name="actionCopyPosition">
+   <property name="text">
+    <string>复制局面</string>
+   </property>
+   <property name="toolTip">
+    <string>复制当前棋盘局面</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionPastePosition">
+   <property name="text">
+    <string>粘贴局面</string>
+   </property>
+   <property name="toolTip">
+    <string>粘贴棋盘局面</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+V</string>
+   </property>
+  </action>
+  <action name="actionSetupPosition">
+   <property name="text">
+    <string>摆局面</string>
+   </property>
+   <property name="toolTip">
+    <string>手动摆放棋子位置</string>
+   </property>
+  </action>
+  <action name="actionShowCoordinates">
+   <property name="text">
+    <string>显示坐标</string>
+   </property>
+   <property name="toolTip">
+    <string>显示棋盘坐标</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionShowMoveHistory">
+   <property name="text">
+    <string>显示着法</string>
+   </property>
+   <property name="toolTip">
+    <string>显示走棋历史</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionShowEvaluation">
+   <property name="text">
+    <string>显示评估</string>
+   </property>
+   <property name="toolTip">
+    <string>显示引擎评估值</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionFullScreen">
+   <property name="text">
+    <string>全屏</string>
+   </property>
+   <property name="toolTip">
+    <string>切换全屏模式</string>
+   </property>
+   <property name="shortcut">
+    <string>F11</string>
+   </property>
+  </action>
+  <action name="actionEngineMatch">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/engine_match.svg</normaloff>:/images/icons/engine_match.svg</iconset>
+   </property>
+   <property name="text">
+    <string>人机对弈</string>
+   </property>
+   <property name="toolTip">
+    <string>与引擎对弈</string>
+   </property>
+  </action>
+  <action name="actionAnalyzePosition">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/analyze_position.svg</normaloff>:/images/icons/analyze_position.svg</iconset>
+   </property>
+   <property name="text">
+    <string>分析局面</string>
+   </property>
+   <property name="toolTip">
+    <string>分析当前局面</string>
+   </property>
+  </action>
+  <action name="actionAnalyzeGame">
+   <property name="text">
+    <string>分析棋谱</string>
+   </property>
+   <property name="toolTip">
+    <string>分析整盘棋谱</string>
+   </property>
+  </action>
+  <action name="actionEngineSettings">
+   <property name="text">
+    <string>引擎设置</string>
+   </property>
+   <property name="toolTip">
+    <string>配置引擎参数</string>
+   </property>
+  </action>
+  <action name="actionLoadEngine">
+   <property name="text">
+    <string>加载引擎</string>
+   </property>
+   <property name="toolTip">
+    <string>加载象棋引擎</string>
+   </property>
+  </action>
+  <action name="actionStartEngine">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/start_engine.svg</normaloff>:/images/icons/start_engine.svg</iconset>
+   </property>
+   <property name="text">
+    <string>启动引擎</string>
+   </property>
+   <property name="toolTip">
+    <string>启动象棋引擎</string>
+   </property>
+  </action>
+  <action name="actionStopEngine">
+   <property name="icon">
+    <iconset resource="Chess.qrc">
+     <normaloff>:/images/icons/stop_engine.svg</normaloff>:/images/icons/stop_engine.svg</iconset>
+   </property>
+   <property name="text">
+    <string>停止引擎</string>
+   </property>
+   <property name="toolTip">
+    <string>停止象棋引擎</string>
+   </property>
+  </action>
+  <action name="actionOpenDatabase">
+   <property name="text">
+    <string>打开开局库</string>
+   </property>
+   <property name="toolTip">
+    <string>打开开局库数据库</string>
+   </property>
+  </action>
+  <action name="actionCreateDatabase">
+   <property name="text">
+    <string>创建开局库</string>
+   </property>
+   <property name="toolTip">
+    <string>创建新的开局库</string>
+   </property>
+  </action>
+  <action name="actionSearchPosition">
+   <property name="text">
+    <string>搜索局面</string>
+   </property>
+   <property name="toolTip">
+    <string>在开局库中搜索当前局面</string>
+   </property>
+  </action>
+  <action name="actionOptions">
+   <property name="text">
+    <string>选项</string>
+   </property>
+   <property name="toolTip">
+    <string>程序设置选项</string>
+   </property>
+  </action>
+  <action name="actionStatistics">
+   <property name="text">
+    <string>统计</string>
+   </property>
+   <property name="toolTip">
+    <string>查看对弈统计</string>
+   </property>
+  </action>
+  <action name="actionHelp">
+   <property name="text">
+    <string>帮助</string>
+   </property>
+   <property name="toolTip">
+    <string>查看帮助文档</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
    </property>
   </action>
  </widget>

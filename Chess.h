@@ -15,7 +15,11 @@
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QDockWidget>
+#include <QtWidgets/QToolBar>
+#include <QAction>
 #include <QPainter>
+#include <QTimer>
+#include <QDateTime>
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPoint>
@@ -27,6 +31,9 @@
 #include "ChessEngine.h"
 #include "MoveHistory.h"
 #include "AIEngine.h"
+
+// 前向声明
+class ConnectionDialog;
 
 // 棋子显示样式枚举
 enum PieceStyle {
@@ -86,6 +93,10 @@ public:
     // 走法历史
     const MoveHistory& getMoveHistory() const { return moveHistory; }
     void setMoveHistory(const MoveHistory& history);
+    
+    // 引擎访问
+    ChessEngine& getEngine() { return engine; }
+    const ChessEngine& getEngine() const { return engine; }
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -169,6 +180,54 @@ private slots:
     void onAITimeChanged(int timeMs);
     void onAIMove();
     void onStopAI();
+    
+    // 连线功能槽函数
+    void onConnection();
+    
+    // 连线管理相关槽函数
+    void onConnect();                    // 连接槽函数
+    void onDisconnect();                 // 断开连接槽函数
+    void onConnectionSchemeChanged(int index);    // 连接方案改变槽函数
+    void onConnectionStatusClicked();    // 连接状态按钮点击槽函数
+    void updateConnectionStatus(); // 更新连接状态
+    
+    // 文件菜单槽函数
+    void onImportPGN();
+    void onExportPGN();
+    
+    // 编辑菜单槽函数
+    void onCopyPosition();
+    void onPastePosition();
+    void onSetupPosition();
+    
+    // 查看菜单槽函数
+    void onShowCoordinates(bool show);
+    void onShowMoveHistory(bool show);
+    void onShowEvaluation(bool show);
+    void onFullScreen();
+    
+    // 游戏菜单槽函数
+    void onEngineMatch();
+    void onAnalyzePosition();
+    void onAnalyzeGame();
+    
+    // 引擎菜单槽函数
+    void onEngineSettings();
+    void onLoadEngine();
+    void onStartEngine();
+    void onStopEngine();
+    
+    // 开局库菜单槽函数
+    void onOpenDatabase();
+    void onCreateDatabase();
+    void onSearchPosition();
+    
+    // 工具菜单槽函数
+    void onOptions();
+    void onStatistics();
+    
+    // 帮助菜单槽函数
+    void onHelp();
 
 private:
     void updateGameInfo();
@@ -179,7 +238,8 @@ private:
     void makeAIMove();
     // void setupUI();
     // void setupMenuBar();
-    // void setupToolBar();
+    void setupToolBar();  // 设置工具栏
+    void setupConnectionToolBar();  // 设置连线管理工具栏
     // void setupStatusBar();
     // void setupMainLayout();
     
@@ -188,6 +248,22 @@ private:
 
 private:
     Ui::ChessClass ui;
+    
+    // 工具栏相关成员变量
+    QToolBar* mainToolBar;           // 主工具栏
+    QToolBar* connectionToolBar;     // 连线管理工具栏
+    
+    // 连线管理工具栏按钮
+    QAction* connectAction;          // 连接动作
+    QAction* disconnectAction;       // 断开连接动作
+    QAction* connectionSchemeAction; // 连接方案动作
+    QComboBox* connectionSchemeCombo; // 连接方案选择框
+    QPushButton* connectionStatusBtn; // 连接状态按钮
+    QLabel* connectionStatusLabel;   // 连接状态标签
+    
+    // 连线管理相关状态
+    bool isConnected;                // 连接状态
+    QString currentScheme;           // 当前连接方案
     
     // UI控件指针 - 4个独立的dock窗口
     QDockWidget *gameControlDockWidget;
@@ -259,5 +335,8 @@ private:
     QPushButton *aiMoveButton;
     QPushButton *stopAIButton;
     QLabel *aiStatusLabel;
+    
+    // 连线功能相关
+    ConnectionDialog *connectionDialog;
 };
 

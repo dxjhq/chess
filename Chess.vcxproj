@@ -103,10 +103,16 @@
     <QtRcc Include="Chess.qrc" />
     <QtUic Include="Chess.ui" />
     <QtMoc Include="Chess.h" />
+    <QtMoc Include="ConnectionDialog.h" />
+    <QtMoc Include="ConnectionSchemeDialog.h" />
+    <QtMoc Include="PlatformConnector.h" />
     <ClCompile Include="Chess.cpp" />
     <ClCompile Include="ChessEngine.cpp" />
     <ClCompile Include="MoveHistory.cpp" />
     <ClCompile Include="AIEngine.cpp" />
+    <ClCompile Include="ConnectionDialog.cpp" />
+    <ClCompile Include="ConnectionSchemeDialog.cpp" />
+    <ClCompile Include="PlatformConnector.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="moc_Chess.cpp" />
   </ItemGroup>
@@ -114,6 +120,9 @@
     <ClInclude Include="ChessEngine.h" />
     <ClInclude Include="MoveHistory.h" />
     <ClInclude Include="AIEngine.h" />
+    <ClInclude Include="ConnectionDialog.h" />
+    <ClInclude Include="ConnectionSchemeDialog.h" />
+    <ClInclude Include="PlatformConnector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

@@ -6,7 +6,7 @@
 #include <cmath>
 #include <climits>
 
-// 棋子价值表（厘兵为单位）
+// 棋子价值表
 const int AIEngine::PIECE_VALUES[15] = {
     0,      // NONE
     10000,  // RED_KING
@@ -26,26 +26,7 @@ const int AIEngine::PIECE_VALUES[15] = {
 };
 
 // 位置价值表（简化版本）
-const int AIEngine::POSITION_VALUES[15][10][9] = {
-    // NONE
-    {{{0}}},
-    // RED_KING - 帅的位置价值
-    {
-        {{0,0,0,0,0,0,0,0,0}},
-        {{0,0,0,0,0,0,0,0,0}},
-        {{0,0,0,0,0,0,0,0,0}},
-        {{0,0,0,0,0,0,0,0,0}},
-        {{0,0,0,0,0,0,0,0,0}},
-        {{0,0,0,0,0,0,0,0,0}},
-        {{0,0,0,0,0,0,0,0,0}},
-        {{0,0,0,1,3,1,0,0,0}},
-        {{0,0,0,2,5,2,0,0,0}},
-        {{0,0,0,1,3,1,0,0,0}}
-    },
-    // 其他棋子的位置价值表（简化处理）
-    {{{0}}}, {{{0}}}, {{{0}}}, {{{0}}}, {{{0}}}, {{{0}}},
-    {{{0}}}, {{{0}}}, {{{0}}}, {{{0}}}, {{{0}}}, {{{0}}}, {{{0}}}
-};
+const int AIEngine::POSITION_VALUES[15][10][9] = {};
 
 // Zobrist哈希表
 uint64_t AIEngine::zobristTable[10][9][15];
@@ -114,7 +95,7 @@ Move AIEngine::getBestMove(const ChessEngine& engine, bool forRed) {
         return endgameMove;
     }
     
-    // 获取所有合法走法
+    // 生成所有合法走法
     ChessEngine tempEngine = engine;
     std::vector<Move> legalMoves = tempEngine.generateLegalMoves(forRed);
     
@@ -146,7 +127,7 @@ Move AIEngine::getBestMove(const ChessEngine& engine, bool forRed) {
         for (const Move& move : legalMoves) {
             if (isTimeUp()) break;
             
-            // 执行走法
+            // 尝试走法
             if (!tempEngine.makeMove(move)) continue;
             
             // 搜索
@@ -173,7 +154,7 @@ Move AIEngine::getBestMove(const ChessEngine& engine, bool forRed) {
             if (beta <= alpha) break; // Alpha-Beta剪枝
         }
         
-        // 如果完成了这个深度的搜索，更新最佳走法
+        // 如果没有超时，更新最佳走法
         if (!isTimeUp()) {
             bestMove = currentBestMove;
             bestScore = currentBestScore;
@@ -196,7 +177,7 @@ Move AIEngine::getBestMove(const ChessEngine& engine, bool forRed) {
         }
         
         if (!goodMoves.empty()) {
-            std::uniform_int_distribution<> dist(0, goodMoves.size() - 1);
+            std::uniform_int_distribution<> dist(0, static_cast<int>(goodMoves.size()) - 1);
             bestMove = goodMoves[dist(randomGenerator)];
         }
     }
@@ -214,101 +195,63 @@ Move AIEngine::getBestMove(const ChessEngine& engine, bool forRed) {
 int AIEngine::alphaBeta(ChessEngine& engine, int depth, int alpha, int beta, bool maximizing) {
     nodesSearched++;
     
-    if (isTimeUp() || depth <= 0) {
+    if (depth == 0 || isTimeUp()) {
         return quiescenceSearch(engine, alpha, beta, maximizing);
     }
     
-    // 检查置换表
-    uint64_t hash = computeHash(engine);
-    auto it = transpositionTable.find(hash);
-    if (it != transpositionTable.end() && it->second.depth >= depth) {
-        const TranspositionEntry& entry = it->second;
-        if (entry.type == TranspositionEntry::EXACT) {
-            return entry.score;
-        } else if (entry.type == TranspositionEntry::LOWER_BOUND && entry.score >= beta) {
-            return entry.score;
-        } else if (entry.type == TranspositionEntry::UPPER_BOUND && entry.score <= alpha) {
-            return entry.score;
-        }
-    }
-    
     std::vector<Move> moves = engine.generateLegalMoves(maximizing);
-    
     if (moves.empty()) {
-        // 检查是否被将死
+        // 无子可走，判断是否被将军
         if (engine.isInCheck(maximizing)) {
-            return maximizing ? (INT_MIN + depth) : (INT_MAX - depth);
+            return maximizing ? -10000 + depth : 10000 - depth; // 被将死
         } else {
             return 0; // 和棋
         }
     }
     
-    // 走法排序
-    Move hashMove;
-    if (it != transpositionTable.end()) {
-        hashMove = it->second.bestMove;
-    }
-    orderMoves(moves, engine, hashMove);
+    orderMoves(moves, engine, Move());
     
-    int bestScore = maximizing ? INT_MIN : INT_MAX;
-    Move bestMove;
-    
-    for (const Move& move : moves) {
-        if (isTimeUp()) break;
-        
-        if (!engine.makeMove(move)) continue;
-        
-        int score = alphaBeta(engine, depth - 1, alpha, beta, !maximizing);
-        
-        engine.undoMove();
-        
-        if (maximizing) {
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = move;
+    if (maximizing) {
+        int maxEval = INT_MIN;
+        for (const Move& move : moves) {
+            if (isTimeUp()) break;
+            
+            if (engine.makeMove(move)) {
+                int eval = alphaBeta(engine, depth - 1, alpha, beta, false);
+                engine.undoMove();
+                
+                maxEval = std::max(maxEval, eval);
+                alpha = std::max(alpha, eval);
+                
+                if (beta <= alpha) break;
             }
-            alpha = std::max(alpha, score);
-        } else {
-            if (score < bestScore) {
-                bestScore = score;
-                bestMove = move;
+        }
+        return maxEval;
+    } else {
+        int minEval = INT_MAX;
+        for (const Move& move : moves) {
+            if (isTimeUp()) break;
+            
+            if (engine.makeMove(move)) {
+                int eval = alphaBeta(engine, depth - 1, alpha, beta, true);
+                engine.undoMove();
+                
+                minEval = std::min(minEval, eval);
+                beta = std::min(beta, eval);
+                
+                if (beta <= alpha) break;
             }
-            beta = std::min(beta, score);
         }
-        
-        if (beta <= alpha) break;
+        return minEval;
     }
-    
-    // 存储到置换表
-    if (transpositionTable.size() < MAX_TT_SIZE) {
-        TranspositionEntry entry;
-        entry.hash = hash;
-        entry.score = bestScore;
-        entry.depth = depth;
-        entry.bestMove = bestMove;
-        
-        if (bestScore <= alpha) {
-            entry.type = TranspositionEntry::UPPER_BOUND;
-        } else if (bestScore >= beta) {
-            entry.type = TranspositionEntry::LOWER_BOUND;
-        } else {
-            entry.type = TranspositionEntry::EXACT;
-        }
-        
-        transpositionTable[hash] = entry;
-    }
-    
-    return bestScore;
 }
 
 int AIEngine::quiescenceSearch(ChessEngine& engine, int alpha, int beta, bool maximizing, int qDepth) {
     nodesSearched++;
     
-    if (qDepth > 4) { // 限制静态搜索深度
-        return evaluatePosition(engine, maximizing);
-    }
-    
     int standPat = evaluatePosition(engine, maximizing);
+    
+    if (qDepth > 4) return standPat;
     
     if (maximizing) {
         if (standPat >= beta) return beta;
@@ -318,32 +261,32 @@ int AIEngine::quiescenceSearch(ChessEngine& engine, int alpha, int beta, bool ma
         beta = std::min(beta, standPat);
     }
     
-    // 只考虑吃子走法
-    std::vector<Move> moves = engine.generateLegalMoves(maximizing);
     std::vector<Move> captures;
+    std::vector<Move> allMoves = engine.generateLegalMoves(maximizing);
     
-    for (const Move& move : moves) {
+    for (const Move& move : allMoves) {
         if (isCapture(move, engine)) {
             captures.push_back(move);
         }
     }
     
+    if (captures.empty()) return standPat;
+    
     orderMoves(captures, engine, Move());
     
     for (const Move& move : captures) {
-        if (!engine.makeMove(move)) continue;
-        
-        int score = quiescenceSearch(engine, alpha, beta, !maximizing, qDepth + 1);
-        
-        engine.undoMove();
-        
-        if (maximizing) {
-            alpha = std::max(alpha, score);
-        } else {
-            beta = std::min(beta, score);
+        if (engine.makeMove(move)) {
+            int score = quiescenceSearch(engine, alpha, beta, !maximizing, qDepth + 1);
+            engine.undoMove();
+            
+            if (maximizing) {
+                if (score >= beta) return beta;
+                alpha = std::max(alpha, score);
+            } else {
+                if (score <= alpha) return alpha;
+                beta = std::min(beta, score);
+            }
         }
-        
-        if (beta <= alpha) break;
     }
     
     return maximizing ? alpha : beta;
@@ -352,11 +295,8 @@ int AIEngine::quiescenceSearch(ChessEngine& engine, int alpha, int beta, bool ma
 int AIEngine::evaluatePosition(const ChessEngine& engine, bool forRed) {
     int score = 0;
     
-    // 子力评估
+    // 物质评估
     score += evaluateMaterial(engine, forRed);
-    
-    // 位置评估
-    score += evaluatePosition(engine, forRed);
     
     // 机动性评估
     score += evaluateMobility(engine, forRed);
@@ -372,8 +312,8 @@ int AIEngine::evaluateMaterial(const ChessEngine& engine, bool forRed) {
     
     for (int row = 0; row < 10; row++) {
         for (int col = 0; col < 9; col++) {
-            PieceType piece = engine.getPiece(row, col);
-            if (piece != NONE) {
+            int piece = engine.getPiece(row, col);
+            if (piece != 0) {
                 score += PIECE_VALUES[piece];
             }
         }
@@ -383,44 +323,25 @@ int AIEngine::evaluateMaterial(const ChessEngine& engine, bool forRed) {
 }
 
 int AIEngine::evaluateMobility(const ChessEngine& engine, bool forRed) {
-    ChessEngine tempEngine = engine;
+    std::vector<Move> redMoves = engine.generateLegalMoves(true);
+    std::vector<Move> blackMoves = engine.generateLegalMoves(false);
     
-    std::vector<Move> redMoves = tempEngine.generateLegalMoves(true);
-    std::vector<Move> blackMoves = tempEngine.generateLegalMoves(false);
-    
-    int mobilityScore = (redMoves.size() - blackMoves.size()) * 2;
-    
-    return forRed ? mobilityScore : -mobilityScore;
+    int mobilityScore = static_cast<int>(redMoves.size()) - static_cast<int>(blackMoves.size());
+    return mobilityScore * 2;
 }
 
 int AIEngine::evaluateKingSafety(const ChessEngine& engine, bool forRed) {
     int score = 0;
     
-    // 简单的王安全评估：检查是否被将军
-    if (engine.isInCheck(true)) {
-        score -= 50;
-    }
-    if (engine.isInCheck(false)) {
-        score += 50;
-    }
+    // 简单的王安全评估
+    if (engine.isInCheck(true)) score -= 50;
+    if (engine.isInCheck(false)) score += 50;
     
-    return forRed ? score : -score;
+    return score;
 }
 
 void AIEngine::orderMoves(std::vector<Move>& moves, const ChessEngine& engine, const Move& hashMove) {
     std::sort(moves.begin(), moves.end(), [&](const Move& a, const Move& b) {
-        // 优先考虑置换表中的最佳走法
-        if (hashMove.isValid()) {
-            if (a.fromRow == hashMove.fromRow && a.fromCol == hashMove.fromCol &&
-                a.toRow == hashMove.toRow && a.toCol == hashMove.toCol) {
-                return true;
-            }
-            if (b.fromRow == hashMove.fromRow && b.fromCol == hashMove.fromCol &&
-                b.toRow == hashMove.toRow && b.toCol == hashMove.toCol) {
-                return false;
-            }
-        }
-        
         return getMoveOrderScore(a, engine) > getMoveOrderScore(b, engine);
     });
 }
@@ -428,31 +349,23 @@ void AIEngine::orderMoves(std::vector<Move>& moves, const ChessEngine& engine, c
 int AIEngine::getMoveOrderScore(const Move& move, const ChessEngine& engine) {
     int score = 0;
     
-    // 吃子走法优先
+    // 优先考虑吃子
     if (isCapture(move, engine)) {
-        PieceType captured = engine.getPiece(move.toRow, move.toCol);
-        PieceType moving = engine.getPiece(move.fromRow, move.fromCol);
-        score += std::abs(PIECE_VALUES[captured]) - std::abs(PIECE_VALUES[moving]) / 10;
-    }
-    
-    // 将军走法优先
-    ChessEngine tempEngine = engine;
-    if (tempEngine.makeMove(move)) {
-        if (tempEngine.isInCheck(!tempEngine.isRedTurn())) {
-            score += 100;
-        }
-        tempEngine.undoMove();
+        int capturedPiece = engine.getPiece(move.toRow, move.toCol);
+        int movingPiece = engine.getPiece(move.fromRow, move.fromCol);
+        score += abs(PIECE_VALUES[capturedPiece]) - abs(PIECE_VALUES[movingPiece]) / 10;
     }
     
     return score;
 }
 
 bool AIEngine::hasOpeningMove(const ChessEngine& engine, Move& move) {
+    // 简单的开局库实现
     std::string position = positionToString(engine);
-    auto it = openingBook.find(position);
     
+    auto it = openingBook.find(position);
     if (it != openingBook.end() && !it->second.empty()) {
-        std::uniform_int_distribution<> dist(0, it->second.size() - 1);
+        std::uniform_int_distribution<> dist(0, static_cast<int>(it->second.size()) - 1);
         move = it->second[dist(randomGenerator)];
         return true;
     }
@@ -461,20 +374,20 @@ bool AIEngine::hasOpeningMove(const ChessEngine& engine, Move& move) {
 }
 
 bool AIEngine::hasEndgameMove(const ChessEngine& engine, Move& move) {
-    // 简单的残局处理：当棋子数量很少时
+    // 简单的残局库实现
     int pieceCount = 0;
     for (int row = 0; row < 10; row++) {
         for (int col = 0; col < 9; col++) {
-            if (engine.getPiece(row, col) != NONE) {
+            if (engine.getPiece(row, col) != 0) {
                 pieceCount++;
             }
         }
     }
     
-    // 如果棋子数量少于10个，认为是残局
-    if (pieceCount < 10) {
-        // 这里可以实现残局库查询
-        // 暂时返回false
+    // 如果棋子数量少于8个，认为是残局
+    if (pieceCount < 8) {
+        // 这里可以添加残局库查询逻辑
+        return false;
     }
     
     return false;
@@ -485,28 +398,24 @@ uint64_t AIEngine::computeHash(const ChessEngine& engine) {
     
     for (int row = 0; row < 10; row++) {
         for (int col = 0; col < 9; col++) {
-            PieceType piece = engine.getPiece(row, col);
-            if (piece != NONE) {
+            int piece = engine.getPiece(row, col);
+            if (piece != 0) {
                 hash ^= zobristTable[row][col][piece];
             }
         }
-    }
-    
-    if (engine.isRedTurn()) {
-        hash ^= zobristTable[0][0][0]; // 用特殊值表示轮到红方
     }
     
     return hash;
 }
 
 void AIEngine::initializeZobrist() {
-    std::mt19937_64 gen(12345); // 固定种子确保一致性
-    std::uniform_int_distribution<uint64_t> dist;
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
     
     for (int row = 0; row < 10; row++) {
         for (int col = 0; col < 9; col++) {
             for (int piece = 0; piece < 15; piece++) {
-                zobristTable[row][col][piece] = dist(gen);
+                zobristTable[row][col][piece] = gen();
             }
         }
     }
@@ -515,19 +424,17 @@ void AIEngine::initializeZobrist() {
 }
 
 bool AIEngine::isTimeUp() const {
-    if (timeLimit <= 0) return false;
-    
     auto currentTime = std::chrono::steady_clock::now();
     double elapsed = std::chrono::duration<double>(currentTime - searchStartTime).count();
-    return elapsed >= timeLimit;
+    return elapsed >= timeLimit || shouldStop;
 }
 
 bool AIEngine::isCapture(const Move& move, const ChessEngine& engine) {
-    return engine.getPiece(move.toRow, move.toCol) != NONE;
+    return engine.getPiece(move.toRow, move.toCol) != 0;
 }
 
 std::string AIEngine::positionToString(const ChessEngine& engine) {
-    return engine.toFEN();
+    return "position_string"; // 简化实现
 }
 
 void AIEngine::debugPrint(const std::string& message) const {
@@ -539,29 +446,40 @@ void AIEngine::debugPrint(const std::string& message) const {
 void AIEngine::clearStatistics() {
     nodesSearched = 0;
     lastThinkingTime = 0.0;
-    transpositionTable.clear();
 }
 
 EvaluationResult AIEngine::analyzePosition(const ChessEngine& engine, bool forRed) {
     EvaluationResult result;
-    
-    auto startTime = std::chrono::steady_clock::now();
-    result.bestMove = getBestMove(engine, forRed);
-    auto endTime = std::chrono::steady_clock::now();
-    
     result.score = evaluatePosition(engine, forRed);
+    result.bestMove = getBestMove(engine, forRed);
     result.depth = maxDepth;
-    result.nodesSearched = nodesSearched;
-    result.timeUsed = std::chrono::duration<double>(endTime - startTime).count();
-    
+    result.nodesSearched = this->nodesSearched;
+    result.timeUsed = lastThinkingTime;
     return result;
 }
 
 std::string AIEngine::getSearchInfo() const {
-    std::ostringstream oss;
-    oss << "深度: " << maxDepth
-        << ", 节点: " << nodesSearched
-        << ", 时间: " << lastThinkingTime << "s"
-        << ", 置换表: " << transpositionTable.size();
-    return oss.str();
+    return "Nodes: " + std::to_string(nodesSearched) + 
+           ", Time: " + std::to_string(lastThinkingTime) + "s";
+}
+
+void AIEngine::stopThinking() {
+    shouldStop = true;
+    thinkingState = AI_IDLE;
+}
+
+void AIEngine::startThinking(const ChessEngine& engine, bool forRed) {
+    // 简单实现，直接调用getBestMove
+    thinkingState = AI_THINKING;
+    Move result = getBestMove(engine, forRed);
+    thinkingResult = result;
+    thinkingState = AI_FINISHED;
+}
+
+Move AIEngine::getThinkingResult() {
+    if (thinkingState == AI_FINISHED) {
+        thinkingState = AI_IDLE;
+        return thinkingResult;
+    }
+    return Move();
 }

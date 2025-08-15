@@ -14,5 +14,19 @@
         <file>images/pieces/classic/black_rook.svg</file>
         <file>images/pieces/classic/black_cannon.svg</file>
         <file>images/pieces/classic/black_pawn.svg</file>
+        <file>images/icons/new.svg</file>
+        <file>images/icons/open.svg</file>
+        <file>images/icons/save.svg</file>
+        <file>images/icons/undo.svg</file>
+        <file>images/icons/redo.svg</file>
+        <file>images/icons/new_game.svg</file>
+        <file>images/icons/flip_board.svg</file>
+        <file>images/icons/connection.svg</file>
+        <file>images/icons/disconnect.svg</file>
+        <file>images/icons/status.svg</file>
+        <file>images/icons/engine_match.svg</file>
+        <file>images/icons/analyze_position.svg</file>
+        <file>images/icons/start_engine.svg</file>
+        <file>images/icons/stop_engine.svg</file>
     </qresource>
 </RCC>

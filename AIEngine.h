@@ -103,6 +103,7 @@ private:
     // 搜索状态
     AIThinkingState thinkingState;
     EvaluationResult currentResult;
+    Move thinkingResult;
     std::chrono::steady_clock::time_point searchStartTime;
     bool shouldStop;
     
@@ -131,7 +132,6 @@ private:
     
     // 评估函数组件
     int evaluateMaterial(const ChessEngine& engine, bool forRed);
-    int evaluatePosition(const ChessEngine& engine, bool forRed);
     int evaluateMobility(const ChessEngine& engine, bool forRed);
     int evaluateKingSafety(const ChessEngine& engine, bool forRed);
     int evaluatePawnStructure(const ChessEngine& engine, bool forRed);

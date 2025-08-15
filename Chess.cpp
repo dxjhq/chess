@@ -1,4 +1,5 @@
 #include "Chess.h"
+#include "ConnectionDialog.h"
 #include <QApplication>
 #include <QMenuBar>
 #include <QToolBar>
@@ -565,7 +566,8 @@ void ChessBoard::mouseMoveEvent(QMouseEvent *event)
 // Chess 主窗口类实现
 Chess::Chess(QWidget *parent)
     : QMainWindow(parent), chessBoard(nullptr), styleComboBox(nullptr),
-      aiEngine(nullptr), aiEnabled(false), aiThinking(false), aiTimer(nullptr)
+      aiEngine(nullptr), aiEnabled(false), aiThinking(false), aiTimer(nullptr),
+      connectionDialog(nullptr)
 {
     ui.setupUi(this);
     
@@ -593,6 +595,10 @@ Chess::Chess(QWidget *parent)
     // 初始化新增的UI控件
     initializeNewControls();
     
+    // 设置工具栏
+    setupToolBar();
+    setupConnectionToolBar();
+    
     // 设置AI引擎
     setupAIEngine();
     
@@ -601,6 +607,50 @@ Chess::Chess(QWidget *parent)
     
     // 初始化游戏信息显示
     updateGameInfo();
+    
+    // 连接菜单信号槽
+    connect(ui.actionConnection, &QAction::triggered, this, &Chess::onConnection);
+    
+    // 连接新增的菜单项信号槽
+    // File菜单
+    connect(ui.actionImportPGN, &QAction::triggered, this, &Chess::onImportPGN);
+    connect(ui.actionExportPGN, &QAction::triggered, this, &Chess::onExportPGN);
+    
+    // Edit菜单
+    connect(ui.actionCopyPosition, &QAction::triggered, this, &Chess::onCopyPosition);
+    connect(ui.actionPastePosition, &QAction::triggered, this, &Chess::onPastePosition);
+    connect(ui.actionSetupPosition, &QAction::triggered, this, &Chess::onSetupPosition);
+    
+    // View菜单
+    connect(ui.actionShowCoordinates, &QAction::toggled, this, &Chess::onShowCoordinates);
+    connect(ui.actionShowMoveHistory, &QAction::toggled, this, &Chess::onShowMoveHistory);
+    connect(ui.actionShowEvaluation, &QAction::toggled, this, &Chess::onShowEvaluation);
+    connect(ui.actionFullScreen, &QAction::triggered, this, &Chess::onFullScreen);
+    
+    // Game菜单
+    connect(ui.actionEngineMatch, &QAction::triggered, this, &Chess::onEngineMatch);
+    connect(ui.actionAnalyzeGame, &QAction::triggered, this, &Chess::onAnalyzeGame);
+    
+    // Engine菜单
+    connect(ui.actionLoadEngine, &QAction::triggered, this, &Chess::onLoadEngine);
+    connect(ui.actionStartEngine, &QAction::triggered, this, &Chess::onStartEngine);
+    connect(ui.actionStopEngine, &QAction::triggered, this, &Chess::onStopEngine);
+    connect(ui.actionEngineSettings, &QAction::triggered, this, &Chess::onEngineSettings);
+    connect(ui.actionAnalyzePosition, &QAction::triggered, this, &Chess::onAnalyzePosition);
+    
+    // Database菜单
+    connect(ui.actionOpenDatabase, &QAction::triggered, this, &Chess::onOpenDatabase);
+    connect(ui.actionCreateDatabase, &QAction::triggered, this, &Chess::onCreateDatabase);
+    connect(ui.actionSearchPosition, &QAction::triggered, this, &Chess::onSearchPosition);
+    // actionOpeningBook 在UI文件中不存在，暂时注释掉
+    // connect(ui.actionOpeningBook, &QAction::triggered, this, &Chess::onOpeningBook);
+    
+    // Tools菜单
+    connect(ui.actionOptions, &QAction::triggered, this, &Chess::onOptions);
+    connect(ui.actionStatistics, &QAction::triggered, this, &Chess::onStatistics);
+    
+    // Help菜单
+    connect(ui.actionHelp, &QAction::triggered, this, &Chess::onHelp);
 }
 
 Chess::~Chess()
@@ -610,6 +660,9 @@ Chess::~Chess()
     }
     if (aiTimer) {
         delete aiTimer;
+    }
+    if (connectionDialog) {
+        delete connectionDialog;
     }
 }
 
@@ -1309,7 +1362,7 @@ void Chess::makeAIMove()
     updateAIControls();
     
     // 获取当前棋盘状态
-    ChessEngine& engine = chessBoard->engine;
+    ChessEngine& engine = chessBoard->getEngine();
     bool isRedTurn = engine.isRedTurn();
     
     // AI思考
@@ -1409,5 +1462,552 @@ void Chess::onStopAI()
     updateAIControls();
     
     statusBar()->showMessage("AI思考已停止", 2000);
+}
+
+/**
+ * @brief 打开平台连线对话框
+ * 创建并显示连线配置对话框，支持多平台象棋连线功能
+ */
+void Chess::onConnection()
+{
+    // 如果对话框不存在，则创建新的对话框
+    if (!connectionDialog) {
+        connectionDialog = new ConnectionDialog(this);
+    }
+    
+    // 显示连线对话框
+    connectionDialog->show();
+    connectionDialog->raise();
+    connectionDialog->activateWindow();
+    
+    // 更新状态栏信息
+    statusBar()->showMessage("打开平台连线配置", 2000);
+}
+
+// ==================== 新增的槽函数实现 ====================
+
+/**
+ * @brief 导入PGN文件
+ * 打开文件对话框选择PGN文件并导入棋谱
+ */
+void Chess::onImportPGN()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, 
+        "导入PGN文件", "", "PGN文件 (*.pgn);;所有文件 (*)");
+    
+    if (!fileName.isEmpty()) {
+        // TODO: 实现PGN文件导入功能
+        statusBar()->showMessage("PGN文件导入功能待实现: " + fileName, 3000);
+    }
+}
+
+/**
+ * @brief 导出PGN文件
+ * 将当前棋谱导出为PGN格式文件
+ */
+void Chess::onExportPGN()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, 
+        "导出PGN文件", "", "PGN文件 (*.pgn);;所有文件 (*)");
+    
+    if (!fileName.isEmpty()) {
+        // TODO: 实现PGN文件导出功能
+        statusBar()->showMessage("PGN文件导出功能待实现: " + fileName, 3000);
+    }
+}
+
+/**
+ * @brief 复制当前局面
+ * 将当前棋盘局面复制到剪贴板
+ */
+void Chess::onCopyPosition()
+{
+    // TODO: 实现局面复制功能
+    statusBar()->showMessage("复制局面功能待实现", 2000);
+}
+
+/**
+ * @brief 粘贴局面
+ * 从剪贴板粘贴局面到棋盘
+ */
+void Chess::onPastePosition()
+{
+    // TODO: 实现局面粘贴功能
+    statusBar()->showMessage("粘贴局面功能待实现", 2000);
+}
+
+/**
+ * @brief 设置局面
+ * 打开局面设置对话框，允许用户自定义棋盘局面
+ */
+void Chess::onSetupPosition()
+{
+    // TODO: 实现局面设置功能
+    statusBar()->showMessage("设置局面功能待实现", 2000);
+}
+
+/**
+ * @brief 显示/隐藏坐标
+ * 切换棋盘坐标显示状态
+ */
+void Chess::onShowCoordinates(bool checked)
+{
+    // TODO: 实现坐标显示切换功能
+    statusBar()->showMessage(checked ? "显示坐标" : "隐藏坐标", 2000);
+}
+
+/**
+ * @brief 显示/隐藏着法历史
+ * 切换着法历史面板显示状态
+ */
+void Chess::onShowMoveHistory(bool checked)
+{
+    // TODO: 实现着法历史显示切换功能
+    statusBar()->showMessage(checked ? "显示着法历史" : "隐藏着法历史", 2000);
+}
+
+/**
+ * @brief 显示/隐藏局面评估
+ * 切换局面评估信息显示状态
+ */
+void Chess::onShowEvaluation(bool checked)
+{
+    // TODO: 实现局面评估显示切换功能
+    statusBar()->showMessage(checked ? "显示局面评估" : "隐藏局面评估", 2000);
+}
+
+/**
+ * @brief 全屏模式切换
+ * 在全屏和窗口模式之间切换
+ */
+void Chess::onFullScreen()
+{
+    if (isFullScreen()) {
+        showNormal();
+        statusBar()->showMessage("退出全屏模式", 2000);
+    } else {
+        showFullScreen();
+        statusBar()->showMessage("进入全屏模式", 2000);
+    }
+}
+
+/**
+ * @brief 引擎对弈
+ * 启动引擎对弈模式
+ */
+void Chess::onEngineMatch()
+{
+    // TODO: 实现引擎对弈功能
+    statusBar()->showMessage("引擎对弈功能待实现", 2000);
+}
+
+/**
+ * @brief 分析棋谱
+ * 使用引擎分析当前棋谱
+ */
+void Chess::onAnalyzeGame()
+{
+    // TODO: 实现棋谱分析功能
+    statusBar()->showMessage("棋谱分析功能待实现", 2000);
+}
+
+/**
+ * @brief 加载引擎
+ * 打开文件对话框选择并加载象棋引擎
+ */
+void Chess::onLoadEngine()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, 
+        "选择象棋引擎", "", "可执行文件 (*.exe);;所有文件 (*)");
+    
+    if (!fileName.isEmpty()) {
+        // TODO: 实现引擎加载功能
+        statusBar()->showMessage("引擎加载功能待实现: " + fileName, 3000);
+    }
+}
+
+/**
+ * @brief 启动引擎
+ * 启动当前加载的象棋引擎
+ */
+void Chess::onStartEngine()
+{
+    // TODO: 实现引擎启动功能
+    statusBar()->showMessage("启动引擎功能待实现", 2000);
+}
+
+/**
+ * @brief 停止引擎
+ * 停止当前运行的象棋引擎
+ */
+void Chess::onStopEngine()
+{
+    // TODO: 实现引擎停止功能
+    statusBar()->showMessage("停止引擎功能待实现", 2000);
+}
+
+/**
+ * @brief 引擎设置
+ * 打开引擎配置对话框
+ */
+void Chess::onEngineSettings()
+{
+    // TODO: 实现引擎设置功能
+    statusBar()->showMessage("引擎设置功能待实现", 2000);
+}
+
+/**
+ * @brief 分析局面
+ * 使用引擎分析当前局面
+ */
+void Chess::onAnalyzePosition()
+{
+    // TODO: 实现局面分析功能
+    statusBar()->showMessage("局面分析功能待实现", 2000);
+}
+
+/**
+ * @brief 打开数据库
+ * 打开棋谱数据库文件
+ */
+void Chess::onOpenDatabase()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, 
+        "打开棋谱数据库", "", "数据库文件 (*.db *.sqlite);;所有文件 (*)");
+    
+    if (!fileName.isEmpty()) {
+        // TODO: 实现数据库打开功能
+        statusBar()->showMessage("数据库打开功能待实现: " + fileName, 3000);
+    }
+}
+
+/**
+ * @brief 创建数据库
+ * 创建新的棋谱数据库
+ */
+void Chess::onCreateDatabase()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, 
+        "创建棋谱数据库", "", "数据库文件 (*.db *.sqlite);;所有文件 (*)");
+    
+    if (!fileName.isEmpty()) {
+        // TODO: 实现数据库创建功能
+        statusBar()->showMessage("数据库创建功能待实现: " + fileName, 3000);
+    }
+}
+
+/**
+ * @brief 搜索局面
+ * 在棋谱数据库中搜索特定局面或棋谱
+ */
+void Chess::onSearchPosition()
+{
+    // TODO: 实现局面搜索功能
+    statusBar()->showMessage("局面搜索功能待实现", 2000);
+}
+
+/**
+ * @brief 程序选项
+ * 打开程序设置对话框
+ */
+void Chess::onOptions()
+{
+    // TODO: 实现程序选项功能
+    statusBar()->showMessage("程序选项功能待实现", 2000);
+}
+
+/**
+ * @brief 统计信息
+ * 显示游戏统计信息对话框
+ */
+void Chess::onStatistics()
+{
+    // TODO: 实现统计信息功能
+    statusBar()->showMessage("统计信息功能待实现", 2000);
+}
+
+/**
+ * @brief 帮助文档
+ * 打开帮助文档或在线帮助
+ */
+void Chess::onHelp()
+{
+    QMessageBox::information(this, "帮助", 
+        "鲨鱼象棋 V1.8.0\n\n"
+        "这是一个功能丰富的中国象棋程序，支持：\n"
+        "• 人机对弈和人人对弈\n"
+        "• 棋谱导入导出\n"
+        "• 引擎分析\n"
+        "• 数据库管理\n"
+        "• 多种界面风格\n\n"
+        "更多功能正在开发中...");
+}
+
+/**
+ * @brief 设置主工具栏
+ * 初始化主工具栏的基本结构和样式，添加棋盘保存相关按钮
+ */
+void Chess::setupToolBar()
+{
+    // 获取主工具栏（已在UI文件中定义）
+    mainToolBar = ui.mainToolBar;
+    if (!mainToolBar) {
+        mainToolBar = addToolBar("棋盘操作");
+    }
+    
+    // 设置工具栏样式
+    mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    mainToolBar->setIconSize(QSize(16, 16));
+    mainToolBar->setMovable(true);
+    mainToolBar->setFloatable(true);
+    
+    // 设置工具栏位置为第一行
+    addToolBarBreak(Qt::TopToolBarArea);
+    
+    // 添加新建游戏按钮
+    QAction* newGameAction = new QAction(QIcon(":/images/icons/new_game.svg"), "新建", this);
+    newGameAction->setToolTip("开始新游戏");
+    mainToolBar->addAction(newGameAction);
+    connect(newGameAction, &QAction::triggered, this, &Chess::onNewGame);
+    
+    // 添加打开文件按钮
+    QAction* openAction = new QAction(QIcon(":/images/icons/open.svg"), "打开", this);
+    openAction->setToolTip("打开棋谱文件");
+    mainToolBar->addAction(openAction);
+    connect(openAction, &QAction::triggered, this, &Chess::onLoadGame);
+    
+    // 添加保存文件按钮
+    QAction* saveAction = new QAction(QIcon(":/images/icons/save.svg"), "保存", this);
+    saveAction->setToolTip("保存当前棋谱");
+    mainToolBar->addAction(saveAction);
+    connect(saveAction, &QAction::triggered, this, &Chess::onSaveGame);
+    
+    mainToolBar->addSeparator();
+    
+    // 添加撤销按钮
+    QAction* undoAction = new QAction(QIcon(":/images/icons/undo.svg"), "撤销", this);
+    undoAction->setToolTip("撤销上一步");
+    mainToolBar->addAction(undoAction);
+    connect(undoAction, &QAction::triggered, this, &Chess::onMovePrevious);
+    
+    // 添加重做按钮
+    QAction* redoAction = new QAction(QIcon(":/images/icons/redo.svg"), "重做", this);
+    redoAction->setToolTip("重做下一步");
+    mainToolBar->addAction(redoAction);
+    connect(redoAction, &QAction::triggered, this, &Chess::onMoveNext);
+    
+    mainToolBar->addSeparator();
+    
+    // 添加翻转棋盘按钮
+    QAction* flipAction = new QAction(QIcon(":/images/icons/flip_board.svg"), "翻转", this);
+    flipAction->setToolTip("翻转棋盘视角");
+    mainToolBar->addAction(flipAction);
+    connect(flipAction, &QAction::triggered, this, &Chess::onFlipBoard);
+    
+    // 添加分析位置按钮
+    QAction* analyzeAction = new QAction(QIcon(":/images/icons/analyze_position.svg"), "分析", this);
+    analyzeAction->setToolTip("分析当前局面");
+    mainToolBar->addAction(analyzeAction);
+    connect(analyzeAction, &QAction::triggered, this, &Chess::onAnalyzePosition);
+}
+
+/**
+ * @brief 设置连线管理工具栏
+ * 创建连线管理专用工具栏，包含连接、断开、方案选择等功能
+ */
+void Chess::setupConnectionToolBar()
+{
+    // 创建连线管理工具栏
+    connectionToolBar = addToolBar("连线管理");
+    connectionToolBar->setObjectName("connectionToolBar");
+    connectionToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    connectionToolBar->setIconSize(QSize(16, 16));
+    
+    // 将连线管理工具栏放在第二行
+    addToolBarBreak(Qt::TopToolBarArea);
+    addToolBar(Qt::TopToolBarArea, connectionToolBar);
+    
+    // 初始化连接状态
+    isConnected = false;
+    currentScheme = "默认方案";
+    
+    // 创建连接动作
+    connectAction = new QAction(QIcon(":/images/icons/connection.svg"), "连接", this);
+    connectAction->setToolTip("连接到象棋平台");
+    connectAction->setEnabled(true);
+    connectionToolBar->addAction(connectAction);
+    
+    // 创建断开连接动作
+    disconnectAction = new QAction(QIcon(":/images/icons/disconnect.svg"), "断开", this);
+    disconnectAction->setToolTip("断开连接");
+    disconnectAction->setEnabled(false);
+    connectionToolBar->addAction(disconnectAction);
+    
+    connectionToolBar->addSeparator();
+    
+    // 创建连接方案选择下拉框
+    connectionSchemeCombo = new QComboBox(this);
+    connectionSchemeCombo->addItem("默认方案");
+    connectionSchemeCombo->addItem("天天象棋");
+    connectionSchemeCombo->addItem("QQ象棋");
+    connectionSchemeCombo->addItem("象棋巫师");
+    connectionSchemeCombo->setToolTip("选择连接方案");
+    connectionSchemeCombo->setMinimumWidth(120);
+    connectionToolBar->addWidget(connectionSchemeCombo);
+    
+    connectionToolBar->addSeparator();
+    
+    // 创建连接状态标签
+    connectionStatusLabel = new QLabel("未连接", this);
+    connectionStatusLabel->setStyleSheet("QLabel { color: red; font-weight: bold; padding: 2px 8px; }");
+    connectionStatusLabel->setToolTip("当前连接状态");
+    connectionToolBar->addWidget(connectionStatusLabel);
+    
+    // 创建连接状态按钮
+    connectionStatusBtn = new QPushButton(this);
+    connectionStatusBtn->setIcon(QIcon(":/images/icons/status.svg"));
+    connectionStatusBtn->setText("状态");
+    connectionStatusBtn->setMaximumWidth(80);
+    connectionStatusBtn->setToolTip("查看详细连接状态");
+    connectionToolBar->addWidget(connectionStatusBtn);
+    
+    // 连接信号槽
+    connect(connectAction, &QAction::triggered, this, &Chess::onConnect);
+    connect(disconnectAction, &QAction::triggered, this, &Chess::onDisconnect);
+    connect(connectionSchemeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &Chess::onConnectionSchemeChanged);
+    connect(connectionStatusBtn, &QPushButton::clicked, this, &Chess::onConnectionStatusClicked);
+    
+    statusBar()->showMessage("显示帮助信息", 2000);
+}
+
+/**
+ * @brief 处理连接按钮点击事件
+ * 执行连接到象棋平台的操作
+ */
+void Chess::onConnect()
+{
+    if (isConnected) {
+        statusBar()->showMessage("已经连接，请先断开连接", 2000);
+        return;
+    }
+    
+    statusBar()->showMessage("正在连接到 " + currentScheme + "...", 0);
+    
+    // 禁用连接按钮，启用断开按钮
+    connectAction->setEnabled(false);
+    disconnectAction->setEnabled(true);
+    connectionSchemeCombo->setEnabled(false);
+    
+    // 模拟连接过程（实际项目中这里会调用真实的连接逻辑）
+    QTimer::singleShot(2000, this, [this]() {
+        isConnected = true;
+        connectionStatusLabel->setText("已连接");
+        connectionStatusLabel->setStyleSheet("QLabel { color: green; font-weight: bold; padding: 2px 8px; }");
+        statusBar()->showMessage("成功连接到 " + currentScheme, 3000);
+    });
+}
+
+/**
+ * @brief 处理断开连接按钮点击事件
+ * 执行断开连接的操作
+ */
+void Chess::onDisconnect()
+{
+    if (!isConnected) {
+        statusBar()->showMessage("当前未连接", 2000);
+        return;
+    }
+    
+    statusBar()->showMessage("正在断开连接...", 0);
+    
+    // 模拟断开连接过程
+    QTimer::singleShot(1000, this, [this]() {
+        isConnected = false;
+        connectionStatusLabel->setText("未连接");
+        connectionStatusLabel->setStyleSheet("QLabel { color: red; font-weight: bold; padding: 2px 8px; }");
+        
+        // 恢复按钮状态
+        connectAction->setEnabled(true);
+        disconnectAction->setEnabled(false);
+        connectionSchemeCombo->setEnabled(true);
+        
+        statusBar()->showMessage("已断开连接", 3000);
+    });
+}
+
+/**
+ * @brief 处理连接方案改变事件
+ * @param index 选中的方案索引
+ */
+void Chess::onConnectionSchemeChanged(int index)
+{
+    if (isConnected) {
+        QMessageBox::StandardButton reply = QMessageBox::question(this,
+            "切换连接方案",
+            "当前已连接，切换方案将断开现有连接。是否继续？",
+            QMessageBox::Yes | QMessageBox::No);
+        
+        if (reply == QMessageBox::No) {
+            // 恢复到之前的选择
+            connectionSchemeCombo->blockSignals(true);
+            for (int i = 0; i < connectionSchemeCombo->count(); ++i) {
+                if (connectionSchemeCombo->itemText(i) == currentScheme) {
+                    connectionSchemeCombo->setCurrentIndex(i);
+                    break;
+                }
+            }
+            connectionSchemeCombo->blockSignals(false);
+            return;
+        }
+        
+        // 先断开连接
+        onDisconnect();
+    }
+    
+    currentScheme = connectionSchemeCombo->itemText(index);
+    statusBar()->showMessage("已切换到连接方案: " + currentScheme, 2000);
+}
+
+/**
+ * @brief 处理连接状态按钮点击事件
+ * 显示详细的连接状态信息
+ */
+void Chess::onConnectionStatusClicked()
+{
+    QString statusInfo;
+    if (isConnected) {
+        statusInfo = QString("连接状态: 已连接\n")
+                   + "连接方案: " + currentScheme + "\n"
+                   + "连接时间: " + QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss") + "\n"
+                   + "状态: 正常";
+    } else {
+        statusInfo = QString("连接状态: 未连接\n")
+                   + "当前方案: " + currentScheme + "\n"
+                   + "状态: 待连接";
+    }
+    
+    QMessageBox::information(this, "连接状态详情", statusInfo);
+}
+
+/**
+ * @brief 更新连接状态显示
+ * 根据当前连接状态更新UI显示
+ */
+void Chess::updateConnectionStatus()
+{
+    if (isConnected) {
+        connectionStatusLabel->setText("已连接");
+        connectionStatusLabel->setStyleSheet("QLabel { color: green; font-weight: bold; padding: 2px 8px; }");
+        connectAction->setEnabled(false);
+        disconnectAction->setEnabled(true);
+        connectionSchemeCombo->setEnabled(false);
+    } else {
+        connectionStatusLabel->setText("未连接");
+        connectionStatusLabel->setStyleSheet("QLabel { color: red; font-weight: bold; padding: 2px 8px; }");
+        connectAction->setEnabled(true);
+        disconnectAction->setEnabled(false);
+        connectionSchemeCombo->setEnabled(true);
+    }
 }
 
