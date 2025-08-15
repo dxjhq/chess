@@ -11,21 +11,21 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>鲨鱼象棋 V1.8.0</string>
+   <string>中国象棋</string>
   </property>
   <property name="windowIcon">
-   <iconset>
+   <iconset resource="Chess.qrc">
     <normaloff>:/Chess/Resources/icon.png</normaloff>:/Chess/Resources/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QHBoxLayout" name="centralLayout">
     <item>
      <widget class="QFrame" name="gameFrame">
       <property name="frameShape">
-       <enum>QFrame::Shape::StyledPanel</enum>
+       <enum>QFrame::StyledPanel</enum>
       </property>
       <property name="frameShadow">
-       <enum>QFrame::Shadow::Raised</enum>
+       <enum>QFrame::Raised</enum>
       </property>
       <layout class="QVBoxLayout" name="gameLayout">
        <item>
@@ -47,10 +47,10 @@
 border: 2px solid black;</string>
          </property>
          <property name="text">
-          <string/>
+          <string>棋盘</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -62,10 +62,10 @@ border: 2px solid black;</string>
             <string notr="true">background-color: rgb(100, 149, 237);</string>
            </property>
            <property name="frameShape">
-            <enum>QFrame::Shape::StyledPanel</enum>
+            <enum>QFrame::StyledPanel</enum>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Shadow::Raised</enum>
+            <enum>QFrame::Raised</enum>
            </property>
            <layout class="QVBoxLayout" name="player1Layout">
             <item>
@@ -74,10 +74,10 @@ border: 2px solid black;</string>
                <string notr="true">color: white; font-weight: bold;</string>
               </property>
               <property name="text">
-               <string>将 Player1</string>
+               <string>红方</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
+               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -90,7 +90,7 @@ border: 2px solid black;</string>
                <string>00:00:00</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
+               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -100,13 +100,13 @@ border: 2px solid black;</string>
          <item>
           <widget class="QFrame" name="player2Frame">
            <property name="styleSheet">
-            <string notr="true">background-color: rgb(220, 20, 60);</string>
+            <string notr="true">background-color: rgb(139, 69, 19);</string>
            </property>
            <property name="frameShape">
-            <enum>QFrame::Shape::StyledPanel</enum>
+            <enum>QFrame::StyledPanel</enum>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Shadow::Raised</enum>
+            <enum>QFrame::Raised</enum>
            </property>
            <layout class="QVBoxLayout" name="player2Layout">
             <item>
@@ -115,10 +115,10 @@ border: 2px solid black;</string>
                <string notr="true">color: white; font-weight: bold;</string>
               </property>
               <property name="text">
-               <string>帅 Player2</string>
+               <string>黑方</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
+               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -131,7 +131,7 @@ border: 2px solid black;</string>
                <string>00:00:00</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
+               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -140,127 +140,10 @@ border: 2px solid black;</string>
          </item>
         </layout>
        </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
-     <widget class="QFrame" name="controlFrame">
-      <property name="minimumSize">
-       <size>
-        <width>300</width>
-        <height>0</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>300</width>
-        <height>16777215</height>
-       </size>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::Shape::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Shadow::Raised</enum>
-      </property>
-      <layout class="QVBoxLayout" name="controlLayout">
-       <item>
-        <widget class="QGroupBox" name="gameControlGroup">
-         <property name="title">
-          <string>游戏控制</string>
-         </property>
-         <layout class="QVBoxLayout" name="gameControlLayout">
-          <item>
-           <widget class="QPushButton" name="newGameButton">
-            <property name="text">
-             <string>新游戏</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="loadGameButton">
-            <property name="text">
-             <string>载入游戏</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="saveGameButton">
-            <property name="text">
-             <string>保存游戏</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="undoButton">
-            <property name="text">
-             <string>悔棋</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="redoButton">
-            <property name="text">
-             <string>重做</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="gameInfoGroup">
-         <property name="title">
-          <string>游戏信息</string>
-         </property>
-         <layout class="QVBoxLayout" name="gameInfoLayout">
-          <item>
-           <widget class="QLabel" name="currentPlayerLabel">
-            <property name="text">
-             <string>当前玩家: 红方</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="gameStatusLabel">
-            <property name="text">
-             <string>游戏状态: 进行中</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="moveCountLabel">
-            <property name="text">
-             <string>回合数: 1</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="moveHistoryGroup">
-         <property name="title">
-          <string>棋谱</string>
-         </property>
-         <layout class="QVBoxLayout" name="moveHistoryLayout">
-          <item>
-           <widget class="QListWidget" name="moveHistoryList">
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>200</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
        <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
+          <enum>Qt::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -281,47 +164,44 @@ border: 2px solid black;</string>
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>33</height>
+     <height>22</height>
     </rect>
    </property>
-   <widget class="QMenu" name="fileMenu">
+   <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>文件</string>
     </property>
-    <addaction name="newGameAction"/>
+    <addaction name="actionNew"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSaveAs"/>
     <addaction name="separator"/>
-    <addaction name="loadGameAction"/>
-    <addaction name="saveGameAction"/>
-    <addaction name="separator"/>
-    <addaction name="exitAction"/>
+    <addaction name="actionExit"/>
    </widget>
-   <widget class="QMenu" name="editMenu">
+   <widget class="QMenu" name="menuEdit">
     <property name="title">
      <string>编辑</string>
     </property>
-    <addaction name="undoAction"/>
-    <addaction name="redoAction"/>
-    <addaction name="separator"/>
-    <addaction name="settingsAction"/>
+    <addaction name="actionUndo"/>
+    <addaction name="actionRedo"/>
    </widget>
-   <widget class="QMenu" name="viewMenu">
+   <widget class="QMenu" name="menuGame">
     <property name="title">
-     <string>视图</string>
+     <string>游戏</string>
     </property>
-    <addaction name="showCoordinatesAction"/>
-    <addaction name="showLastMoveAction"/>
+    <addaction name="actionNewGame"/>
+    <addaction name="actionFlipBoard"/>
    </widget>
-   <widget class="QMenu" name="helpMenu">
+   <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>帮助</string>
     </property>
-    <addaction name="aboutAction"/>
-    <addaction name="aboutQtAction"/>
+    <addaction name="actionAbout"/>
    </widget>
-   <addaction name="fileMenu"/>
-   <addaction name="editMenu"/>
-   <addaction name="viewMenu"/>
-   <addaction name="helpMenu"/>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuGame"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -330,277 +210,61 @@ border: 2px solid black;</string>
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="newGameAction"/>
-   <addaction name="loadGameAction"/>
-   <addaction name="saveGameAction"/>
-   <addaction name="separator"/>
-   <addaction name="undoAction"/>
-   <addaction name="redoAction"/>
-   <addaction name="separator"/>
-   <addaction name="settingsAction"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="newGameAction">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/Chess/Resources/new.png</normaloff>:/Chess/Resources/new.png</iconset>
-   </property>
+  <action name="actionNew">
    <property name="text">
-    <string>新游戏</string>
-   </property>
-   <property name="toolTip">
-    <string>开始新游戏</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+N</string>
+    <string>新建</string>
    </property>
   </action>
-  <action name="loadGameAction">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/Chess/Resources/open.png</normaloff>:/Chess/Resources/open.png</iconset>
-   </property>
+  <action name="actionOpen">
    <property name="text">
-    <string>载入游戏</string>
-   </property>
-   <property name="toolTip">
-    <string>载入保存的游戏</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+O</string>
+    <string>打开</string>
    </property>
   </action>
-  <action name="saveGameAction">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/Chess/Resources/save.png</normaloff>:/Chess/Resources/save.png</iconset>
-   </property>
+  <action name="actionSave">
    <property name="text">
-    <string>保存游戏</string>
-   </property>
-   <property name="toolTip">
-    <string>保存当前游戏</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+S</string>
+    <string>保存</string>
    </property>
   </action>
-  <action name="exitAction">
+  <action name="actionSaveAs">
+   <property name="text">
+    <string>另存为</string>
+   </property>
+  </action>
+  <action name="actionExit">
    <property name="text">
     <string>退出</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+Q</string>
-   </property>
   </action>
-  <action name="undoAction">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/Chess/Resources/undo.png</normaloff>:/Chess/Resources/undo.png</iconset>
-   </property>
+  <action name="actionUndo">
    <property name="text">
-    <string>悔棋</string>
-   </property>
-   <property name="toolTip">
-    <string>撤销上一步</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Z</string>
+    <string>撤销</string>
    </property>
   </action>
-  <action name="redoAction">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/Chess/Resources/redo.png</normaloff>:/Chess/Resources/redo.png</iconset>
-   </property>
+  <action name="actionRedo">
    <property name="text">
     <string>重做</string>
    </property>
-   <property name="toolTip">
-    <string>重做上一步</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Y</string>
-   </property>
   </action>
-  <action name="settingsAction">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/Chess/Resources/settings.png</normaloff>:/Chess/Resources/settings.png</iconset>
-   </property>
+  <action name="actionNewGame">
    <property name="text">
-    <string>设置</string>
-   </property>
-   <property name="toolTip">
-    <string>游戏设置</string>
+    <string>新游戏</string>
    </property>
   </action>
-  <action name="aboutAction">
+  <action name="actionFlipBoard">
+   <property name="text">
+    <string>翻转棋盘</string>
+   </property>
+  </action>
+  <action name="actionAbout">
    <property name="text">
     <string>关于</string>
    </property>
   </action>
-  <action name="aboutQtAction">
-   <property name="text">
-    <string>关于Qt</string>
-   </property>
-  </action>
-  <action name="showCoordinatesAction">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>显示坐标</string>
-   </property>
-  </action>
-  <action name="showLastMoveAction">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>显示最后一步</string>
-   </property>
-  </action>
  </widget>
- <layoutdefault spacing="6" margin="11"/>
  <resources>
   <include location="Chess.qrc"/>
  </resources>
- <connections>
-  <connection>
-   <sender>newGameAction</sender>
-   <signal>triggered()</signal>
-   <receiver>ChessClass</receiver>
-   <slot>onNewGame()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>loadGameAction</sender>
-   <signal>triggered()</signal>
-   <receiver>ChessClass</receiver>
-   <slot>onLoadGame()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>saveGameAction</sender>
-   <signal>triggered()</signal>
-   <receiver>ChessClass</receiver>
-   <slot>onSaveGame()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>settingsAction</sender>
-   <signal>triggered()</signal>
-   <receiver>ChessClass</receiver>
-   <slot>onSettings()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>aboutAction</sender>
-   <signal>triggered()</signal>
-   <receiver>ChessClass</receiver>
-   <slot>onAbout()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>newGameButton</sender>
-   <signal>clicked()</signal>
-   <receiver>ChessClass</receiver>
-   <slot>onNewGame()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>149</x>
-     <y>100</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>loadGameButton</sender>
-   <signal>clicked()</signal>
-   <receiver>ChessClass</receiver>
-   <slot>onLoadGame()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>149</x>
-     <y>130</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>saveGameButton</sender>
-   <signal>clicked()</signal>
-   <receiver>ChessClass</receiver>
-   <slot>onSaveGame()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>149</x>
-     <y>160</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
- <slots>
-  <slot>onNewGame()</slot>
-  <slot>onLoadGame()</slot>
-  <slot>onSaveGame()</slot>
-  <slot>onSettings()</slot>
-  <slot>onAbout()</slot>
- </slots>
+ <connections/>
 </ui>

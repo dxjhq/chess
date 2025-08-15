@@ -1,4 +1,4 @@
-﻿#include "Chess.h"
+#include "Chess.h"
 #include <QApplication>
 #include <QMenuBar>
 #include <QToolBar>
@@ -14,6 +14,12 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <QFile>
+#include <QHBoxLayout>
+#include <QGridLayout>
+#include <QFrame>
+#include <QSvgRenderer>
+#include <QDebug>
+#include <vector>
 
 // PieceStyleManager 实现
 PieceStyleManager& PieceStyleManager::getInstance() {
@@ -155,31 +161,157 @@ void ChessBoard::setPieceStyle(PieceStyle style)
 
 void ChessBoard::initializeBoard()
 {
-    // 初始化棋盘为空
-    for (int i = 0; i < BOARD_HEIGHT; i++) {
-        for (int j = 0; j < BOARD_WIDTH; j++) {
-            board[i][j] = NONE;
+    engine.initializeBoard();
+    moveHistory.clear();
+    selectedPos = QPoint(-1, -1);
+    pieceSelected = false;
+    validMoves.clear();
+    updateGameStatus();
+    update();
+}
+
+bool ChessBoard::makeMove(int fromRow, int fromCol, int toRow, int toCol)
+{
+    Move move(fromRow, fromCol, toRow, toCol);
+    if (engine.makeMove(move)) {
+        moveHistory.addMove(move);
+        selectedPos = QPoint(-1, -1);
+        pieceSelected = false;
+        validMoves.clear();
+        updateGameStatus();
+        emit moveExecuted(move);
+        emit boardChanged();
+        update();
+        return true;
+    }
+    return false;
+}
+
+void ChessBoard::undoMove()
+{
+    if (engine.undoMove()) {
+        if (!moveHistory.isEmpty()) {
+            moveHistory.goToPrevious();
+        }
+        selectedPos = QPoint(-1, -1);
+        pieceSelected = false;
+        validMoves.clear();
+        updateGameStatus();
+        emit boardChanged();
+        update();
+    }
+}
+
+void ChessBoard::redoMove()
+{
+    if (moveHistory.goToNext()) {
+        Move move = moveHistory.getCurrentMove();
+        if (move.isValid()) {
+            engine.makeMove(move);
+            updateGameStatus();
+            emit boardChanged();
+            update();
         }
     }
+}
+
+void ChessBoard::goToMove(int index)
+{
+    if (moveHistory.goToMove(index)) {
+        // 重建棋盘状态到指定走法
+        engine.initializeBoard();
+        for (int i = 0; i <= index; i++) {
+            Move move = moveHistory.getMove(i);
+            if (move.isValid()) {
+                engine.makeMove(move);
+            }
+        }
+        selectedPos = QPoint(-1, -1);
+        pieceSelected = false;
+        validMoves.clear();
+        updateGameStatus();
+        emit boardChanged();
+        update();
+    }
+}
+
+bool ChessBoard::isGameOver() const
+{
+    bool redTurn = engine.isRedTurn();
+    return engine.isCheckmate(redTurn) || engine.isStalemate(redTurn);
+}
+
+bool ChessBoard::isRedTurn() const
+{
+    return engine.isRedTurn();
+}
+
+QString ChessBoard::getGameStatus() const
+{
+    return gameStatus;
+}
+
+void ChessBoard::setBoard(const PieceType board[10][9])
+{
+    engine.setBoard(board);
+    selectedPos = QPoint(-1, -1);
+    pieceSelected = false;
+    validMoves.clear();
+    updateGameStatus();
+    update();
+}
+
+void ChessBoard::copyBoard(PieceType board[10][9]) const
+{
+    engine.copyBoard(board);
+}
+
+void ChessBoard::setMoveHistory(const MoveHistory& history)
+{
+    moveHistory = history;
+    // 重建棋盘状态
+    engine.initializeBoard();
+    for (int i = 0; i <= moveHistory.getCurrentIndex(); i++) {
+        Move move = moveHistory.getMove(i);
+        if (move.isValid()) {
+            engine.makeMove(move);
+        }
+    }
+    updateGameStatus();
+    update();
+}
+
+void ChessBoard::updateGameStatus()
+{
+    bool redTurn = engine.isRedTurn();
     
-    // 设置初始棋子位置
-    // 黑方（上方）
-    board[0][0] = board[0][8] = BLACK_ROOK;
-    board[0][1] = board[0][7] = BLACK_KNIGHT;
-    board[0][2] = board[0][6] = BLACK_BISHOP;
-    board[0][3] = board[0][5] = BLACK_ADVISOR;
-    board[0][4] = BLACK_KING;
-    board[2][1] = board[2][7] = BLACK_CANNON;
-    board[3][0] = board[3][2] = board[3][4] = board[3][6] = board[3][8] = BLACK_PAWN;
+    if (engine.isCheckmate(redTurn)) {
+        gameStatus = redTurn ? "红方被将死，黑方获胜" : "黑方被将死，红方获胜";
+    } else if (engine.isStalemate(redTurn)) {
+        gameStatus = "和棋";
+    } else if (engine.isInCheck(redTurn)) {
+        gameStatus = redTurn ? "红方被将军" : "黑方被将军";
+    } else {
+        gameStatus = redTurn ? "轮到红方" : "轮到黑方";
+    }
     
-    // 红方（下方）
-    board[9][0] = board[9][8] = RED_ROOK;
-    board[9][1] = board[9][7] = RED_KNIGHT;
-    board[9][2] = board[9][6] = RED_BISHOP;
-    board[9][3] = board[9][5] = RED_ADVISOR;
-    board[9][4] = RED_KING;
-    board[7][1] = board[7][7] = RED_CANNON;
-    board[6][0] = board[6][2] = board[6][4] = board[6][6] = board[6][8] = RED_PAWN;
+    emit gameStatusChanged(gameStatus);
+}
+
+void ChessBoard::highlightValidMoves()
+{
+    validMoves.clear();
+    if (pieceSelected && selectedPos.x() >= 0 && selectedPos.y() >= 0) {
+        PieceType piece = engine.getPiece(selectedPos.x(), selectedPos.y());
+        if (piece != NONE) {
+            std::vector<Move> allMoves = engine.generateLegalMoves(engine.isRedTurn());
+            for (const Move& move : allMoves) {
+                if (move.fromRow == selectedPos.x() && move.fromCol == selectedPos.y()) {
+                    validMoves.push_back(move);
+                }
+            }
+        }
+    }
 }
 
 void ChessBoard::paintEvent(QPaintEvent *event)
@@ -192,6 +324,8 @@ void ChessBoard::paintEvent(QPaintEvent *event)
     
     drawBoard(painter);
     drawPieces(painter);
+    drawSelection(painter);
+    drawValidMoves(painter);
 }
 
 void ChessBoard::drawBoard(QPainter &painter)
@@ -247,18 +381,32 @@ void ChessBoard::drawPieces(QPainter &painter)
 {
     for (int i = 0; i < BOARD_HEIGHT; i++) {
         for (int j = 0; j < BOARD_WIDTH; j++) {
-            if (board[i][j] != NONE) {
-                drawPiece(painter, i, j, board[i][j]);
+            PieceType piece = engine.getPiece(i, j);
+            if (piece != NONE) {
+                drawPiece(painter, i, j, piece);
             }
         }
     }
-    
-    // 绘制选中效果
+}
+
+void ChessBoard::drawSelection(QPainter &painter)
+{
     if (pieceSelected && selectedPos.x() >= 0 && selectedPos.y() >= 0) {
-        painter.setPen(QPen(Qt::yellow, 3));
-        painter.setBrush(Qt::NoBrush);
         QPoint center = boardToPixel(selectedPos.x(), selectedPos.y());
+        painter.setPen(QPen(Qt::red, 3));
+        painter.setBrush(Qt::NoBrush);
         painter.drawEllipse(center.x() - 22, center.y() - 22, 44, 44);
+    }
+}
+
+void ChessBoard::drawValidMoves(QPainter &painter)
+{
+    painter.setPen(QPen(Qt::green, 2));
+    painter.setBrush(QBrush(QColor(0, 255, 0, 50)));
+    
+    for (const Move& move : validMoves) {
+        QPoint center = boardToPixel(move.toRow, move.toCol);
+        painter.drawEllipse(center.x() - 15, center.y() - 15, 30, 30);
     }
 }
 
@@ -362,22 +510,47 @@ void ChessBoard::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
         QPoint boardPos = pixelToBoard(event->pos());
-        if (boardPos.x() >= 0 && boardPos.y() >= 0) {
-            if (pieceSelected && selectedPos == boardPos) {
-                // 取消选择
-                pieceSelected = false;
-                selectedPos = QPoint(-1, -1);
-            } else if (board[boardPos.x()][boardPos.y()] != NONE) {
+        
+        if (boardPos.x() >= 0 && boardPos.x() < BOARD_HEIGHT && 
+            boardPos.y() >= 0 && boardPos.y() < BOARD_WIDTH) {
+            
+            if (pieceSelected) {
+                // 如果已经选中了棋子，尝试移动
+                if (boardPos != selectedPos) {
+                    if (makeMove(selectedPos.x(), selectedPos.y(), boardPos.x(), boardPos.y())) {
+                        // 移动成功
+                    } else {
+                        // 移动失败，重新选择
+                        PieceType piece = engine.getPiece(boardPos.x(), boardPos.y());
+                        if (piece != NONE && 
+                            ((engine.isRedTurn() && piece >= RED_KING && piece <= RED_PAWN) ||
+                             (!engine.isRedTurn() && piece >= BLACK_KING && piece <= BLACK_PAWN))) {
+                            selectedPos = boardPos;
+                            highlightValidMoves();
+                        } else {
+                            pieceSelected = false;
+                            selectedPos = QPoint(-1, -1);
+                            validMoves.clear();
+                        }
+                    }
+                } else {
+                    // 点击同一个位置，取消选择
+                    pieceSelected = false;
+                    selectedPos = QPoint(-1, -1);
+                    validMoves.clear();
+                }
+            } else {
                 // 选择棋子
-                selectedPos = boardPos;
-                pieceSelected = true;
-            } else if (pieceSelected) {
-                // 移动棋子（简单实现，不检查规则）
-                board[boardPos.x()][boardPos.y()] = board[selectedPos.x()][selectedPos.y()];
-                board[selectedPos.x()][selectedPos.y()] = NONE;
-                pieceSelected = false;
-                selectedPos = QPoint(-1, -1);
+                PieceType piece = engine.getPiece(boardPos.x(), boardPos.y());
+                if (piece != NONE && 
+                    ((engine.isRedTurn() && piece >= RED_KING && piece <= RED_PAWN) ||
+                     (!engine.isRedTurn() && piece >= BLACK_KING && piece <= BLACK_PAWN))) {
+                    selectedPos = boardPos;
+                    pieceSelected = true;
+                    highlightValidMoves();
+                }
             }
+            
             update();
         }
     }
@@ -391,7 +564,8 @@ void ChessBoard::mouseMoveEvent(QMouseEvent *event)
 
 // Chess 主窗口类实现
 Chess::Chess(QWidget *parent)
-    : QMainWindow(parent), chessBoard(nullptr), styleComboBox(nullptr)
+    : QMainWindow(parent), chessBoard(nullptr), styleComboBox(nullptr),
+      aiEngine(nullptr), aiEnabled(false), aiThinking(false), aiTimer(nullptr)
 {
     ui.setupUi(this);
     
@@ -404,12 +578,23 @@ Chess::Chess(QWidget *parent)
     boardLayout->addWidget(chessBoard);
     ui.chessBoard->setLayout(boardLayout);
     
+    // 连接棋盘信号
+    connect(chessBoard, &ChessBoard::moveExecuted, this, &Chess::onMoveExecuted);
+    connect(chessBoard, &ChessBoard::gameStatusChanged, this, &Chess::onGameStatusChanged);
+    connect(chessBoard, &ChessBoard::boardChanged, this, &Chess::onBoardChanged);
+    
     // 设置字体以支持中文显示
     QFont font("Microsoft YaHei", 10);
     this->setFont(font);
     
     // 设置样式选择菜单
     setupStyleMenu();
+    
+    // 初始化新增的UI控件
+    initializeNewControls();
+    
+    // 设置AI引擎
+    setupAIEngine();
     
     // 显示状态栏消息
     statusBar()->showMessage("欢迎使用鲨鱼象棋 V1.8.0", 3000);
@@ -420,6 +605,12 @@ Chess::Chess(QWidget *parent)
 
 Chess::~Chess()
 {
+    if (aiEngine) {
+        delete aiEngine;
+    }
+    if (aiTimer) {
+        delete aiTimer;
+    }
 }
 
 void Chess::setupStyleMenu()
@@ -455,14 +646,254 @@ void Chess::onStyleChanged()
 
 void Chess::updateGameInfo()
 {
-    // 更新游戏信息显示
-    ui.currentPlayerLabel->setText("当前玩家: 红方");
-    ui.gameStatusLabel->setText("游戏状态: 进行中");
-    ui.moveCountLabel->setText("回合数: 1");
+    // 更新游戏信息显示 - 这些控件已经从UI中移除
+    // 可以在这里添加其他游戏信息更新逻辑
     
     // 更新玩家时间显示
     ui.player1Time->setText("00:00:00");
     ui.player2Time->setText("00:00:00");
+}
+
+void Chess::initializeNewControls()
+{
+    // 创建游戏控制dock窗口
+    gameControlDockWidget = new QDockWidget("游戏控制", this);
+    gameControlDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    gameControlDockWidget->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
+    
+    gameControlGroup = new QGroupBox("游戏控制");
+    QGridLayout* gameControlLayout = new QGridLayout(gameControlGroup);
+    
+    newGameBtn = new QPushButton("新游戏", gameControlGroup);
+    loadGameBtn = new QPushButton("载入游戏", gameControlGroup);
+    saveGameBtn = new QPushButton("保存游戏", gameControlGroup);
+    undoBtn = new QPushButton("悔棋", gameControlGroup);
+    
+    gameControlLayout->addWidget(newGameBtn, 0, 0);
+    gameControlLayout->addWidget(loadGameBtn, 0, 1);
+    gameControlLayout->addWidget(saveGameBtn, 1, 0);
+    gameControlLayout->addWidget(undoBtn, 1, 1);
+    
+    gameControlDockWidget->setWidget(gameControlGroup);
+    addDockWidget(Qt::RightDockWidgetArea, gameControlDockWidget);
+    
+    // 创建时间控制dock窗口
+    timeControlDockWidget = new QDockWidget("时间控制", this);
+    timeControlDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    timeControlDockWidget->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
+    
+    timeControlGroup = new QGroupBox("时间控制");
+    QGridLayout* timeControlLayout = new QGridLayout(timeControlGroup);
+    
+    blackTimeLabel = new QLabel("黑方:　　人类", timeControlGroup);
+    blackUsedTimeLabel = new QLabel("已用时:　　000:00", timeControlGroup);
+    blackLastMoveLabel = new QLabel("上步时:　　000:00", timeControlGroup);
+    blackRemainingLabel = new QLabel("剩余时:　　009:48", timeControlGroup);
+    
+    redTimeLabel = new QLabel("红方　　　人类", timeControlGroup);
+    redUsedTimeLabel = new QLabel("已用时:　　000:00", timeControlGroup);
+    redLastMoveLabel = new QLabel("上步时:　　000:00", timeControlGroup);
+    redRemainingLabel = new QLabel("剩余时:　　009:48", timeControlGroup);
+    
+    timeControlLayout->addWidget(blackTimeLabel, 0, 0);
+    timeControlLayout->addWidget(blackUsedTimeLabel, 1, 0);
+    timeControlLayout->addWidget(blackLastMoveLabel, 2, 0);
+    timeControlLayout->addWidget(blackRemainingLabel, 3, 0);
+    timeControlLayout->addWidget(redTimeLabel, 0, 1);
+    timeControlLayout->addWidget(redUsedTimeLabel, 1, 1);
+    timeControlLayout->addWidget(redLastMoveLabel, 2, 1);
+    timeControlLayout->addWidget(redRemainingLabel, 3, 1);
+    
+    timeControlDockWidget->setWidget(timeControlGroup);
+    addDockWidget(Qt::RightDockWidgetArea, timeControlDockWidget);
+    tabifyDockWidget(gameControlDockWidget, timeControlDockWidget);
+    
+    // 创建引擎控制dock窗口
+    engineControlDockWidget = new QDockWidget("引擎控制", this);
+    engineControlDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    engineControlDockWidget->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
+    
+    QWidget* engineWidget = new QWidget();
+    QVBoxLayout* engineMainLayout = new QVBoxLayout(engineWidget);
+    
+    // 引擎控制组
+    engineGroup = new QGroupBox("引擎控制");
+    QGridLayout* engineLayout = new QGridLayout(engineGroup);
+    
+    addEngineButton = new QPushButton("添加引擎", engineGroup);
+    engineManageButton = new QPushButton("引擎管理", engineGroup);
+    multiEngineButton = new QPushButton("多引擎策略", engineGroup);
+    deleteEngineButton = new QPushButton("删除引擎", engineGroup);
+    engineEnabledCheck = new QCheckBox("启用引擎", engineGroup);
+    engineComboBox = new QComboBox(engineGroup);
+    engineDepthSpinBox = new QSpinBox(engineGroup);
+    engineTimeSpinBox = new QSpinBox(engineGroup);
+    
+    engineDepthSpinBox->setRange(1, 20);
+    engineDepthSpinBox->setValue(5);
+    engineTimeSpinBox->setRange(1, 10000);
+    engineTimeSpinBox->setValue(1000);
+    
+    engineLayout->addWidget(addEngineButton, 0, 0);
+    engineLayout->addWidget(engineManageButton, 0, 1);
+    engineLayout->addWidget(multiEngineButton, 1, 0);
+    engineLayout->addWidget(engineEnabledCheck, 1, 1);
+    engineLayout->addWidget(engineComboBox, 2, 0);
+    engineLayout->addWidget(new QLabel("深度:"), 2, 1);
+    engineLayout->addWidget(engineDepthSpinBox, 3, 0);
+    engineLayout->addWidget(new QLabel("时间:"), 3, 1);
+    engineLayout->addWidget(engineTimeSpinBox, 4, 0);
+    engineLayout->addWidget(deleteEngineButton, 4, 1);
+    
+    engineMainLayout->addWidget(engineGroup);
+    
+    // 导航组
+    navigationGroup = new QGroupBox("导航");
+    QHBoxLayout* navigationLayout = new QHBoxLayout(navigationGroup);
+    
+    firstMoveButton = new QPushButton("|<", navigationGroup);
+    prevMoveButton = new QPushButton("<", navigationGroup);
+    nextMoveButton = new QPushButton(">", navigationGroup);
+    lastMoveButton = new QPushButton(">|", navigationGroup);
+    openBookButton = new QPushButton("开局库", navigationGroup);
+    
+    navigationLayout->addWidget(firstMoveButton);
+    navigationLayout->addWidget(prevMoveButton);
+    navigationLayout->addWidget(nextMoveButton);
+    navigationLayout->addWidget(lastMoveButton);
+    navigationLayout->addWidget(openBookButton);
+    
+    engineMainLayout->addWidget(navigationGroup);
+    engineMainLayout->addStretch();
+    
+    engineControlDockWidget->setWidget(engineWidget);
+    addDockWidget(Qt::RightDockWidgetArea, engineControlDockWidget);
+    tabifyDockWidget(timeControlDockWidget, engineControlDockWidget);
+    
+    // 创建棋谱dock窗口
+    moveHistoryDockWidget = new QDockWidget("棋谱", this);
+    moveHistoryDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    moveHistoryDockWidget->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
+    
+    QWidget* moveHistoryWidget = new QWidget();
+    QVBoxLayout* moveHistoryMainLayout = new QVBoxLayout(moveHistoryWidget);
+    
+    moveHistoryGroup = new QGroupBox("棋谱");
+    QVBoxLayout* moveHistoryLayout = new QVBoxLayout(moveHistoryGroup);
+    
+    moveHistoryTable = new QTableWidget(0, 5, moveHistoryGroup);
+    QStringList headers;
+    headers << "招法" << "类型" << "分数" << "时间" << "注释(可编辑)";
+    moveHistoryTable->setHorizontalHeaderLabels(headers);
+    
+    QHBoxLayout* moveNavLayout = new QHBoxLayout();
+    moveFirstButton = new QPushButton("<<", moveHistoryGroup);
+    movePrevButton = new QPushButton("<", moveHistoryGroup);
+    moveNextButton = new QPushButton(">", moveHistoryGroup);
+    moveLastButton = new QPushButton(">>", moveHistoryGroup);
+    flipBoardButton = new QPushButton("翻转本局", moveHistoryGroup);
+    copyButton = new QPushButton("播放", moveHistoryGroup);
+    
+    moveNavLayout->addWidget(moveFirstButton);
+    moveNavLayout->addWidget(movePrevButton);
+    moveNavLayout->addWidget(moveNextButton);
+    moveNavLayout->addWidget(moveLastButton);
+    moveNavLayout->addWidget(flipBoardButton);
+    moveNavLayout->addWidget(copyButton);
+    
+    // 连接走法导航按钮
+    connect(moveFirstButton, &QPushButton::clicked, this, &Chess::onMoveFirst);
+    connect(movePrevButton, &QPushButton::clicked, this, &Chess::onMovePrevious);
+    connect(moveNextButton, &QPushButton::clicked, this, &Chess::onMoveNext);
+    connect(moveLastButton, &QPushButton::clicked, this, &Chess::onMoveLast);
+    connect(flipBoardButton, &QPushButton::clicked, this, &Chess::onFlipBoard);
+    connect(copyButton, &QPushButton::clicked, this, &Chess::onCopyMoves);
+    
+    moveHistoryLayout->addWidget(moveHistoryTable);
+    moveHistoryLayout->addLayout(moveNavLayout);
+    
+    moveHistoryMainLayout->addWidget(moveHistoryGroup);
+    moveHistoryMainLayout->addStretch();
+    
+    moveHistoryDockWidget->setWidget(moveHistoryWidget);
+    addDockWidget(Qt::RightDockWidgetArea, moveHistoryDockWidget);
+    tabifyDockWidget(engineControlDockWidget, moveHistoryDockWidget);
+    
+    // 初始化引擎控件
+    engineEnabledCheck->setChecked(false);
+    engineComboBox->setCurrentText("CCStockFish-bm");
+    engineDepthSpinBox->setValue(4);
+    engineTimeSpinBox->setValue(256);
+    
+    // 棋谱表格已经在上面初始化过了
+    
+    // 设置表格列宽
+    moveHistoryTable->setColumnWidth(0, 60);
+    moveHistoryTable->setColumnWidth(1, 40);
+    moveHistoryTable->setColumnWidth(2, 50);
+    moveHistoryTable->setColumnWidth(3, 50);
+    moveHistoryTable->setColumnWidth(4, 80);
+    
+    // 连接信号槽
+    connect(addEngineButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "添加引擎功能待实现");
+    });
+    
+    connect(engineManageButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "引擎管理功能待实现");
+    });
+    
+    connect(multiEngineButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "多引擎策略功能待实现");
+    });
+    
+    connect(deleteEngineButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "删除引擎功能待实现");
+    });
+    
+    connect(firstMoveButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "时间功能待实现");
+    });
+    
+    connect(prevMoveButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "引擎功能待实现");
+    });
+    
+    connect(nextMoveButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "导航功能待实现");
+    });
+    
+    connect(lastMoveButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "趋势图功能待实现");
+    });
+    
+    connect(openBookButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "开局库功能待实现");
+    });
+    
+    connect(moveFirstButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "跳转到第一步功能待实现");
+    });
+    
+    connect(movePrevButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "上一步功能待实现");
+    });
+    
+    connect(moveNextButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "下一步功能待实现");
+    });
+    
+    connect(moveLastButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "跳转到最后一步功能待实现");
+    });
+    
+    connect(flipBoardButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "翻转棋盘功能待实现");
+    });
+    
+    connect(copyButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(this, "提示", "播放功能待实现");
+    });
 }
 
 /*
@@ -644,10 +1075,86 @@ void Chess::setupMainLayout()
 void Chess::onNewGame()
 {
     chessBoard->initializeBoard();
-    chessBoard->update();
-    moveHistory->clear();
-    engineOutput->clear();
-    statusLabel->setText("新游戏开始");
+    moveHistoryTable->clearContents();
+    moveHistoryTable->setRowCount(0);
+    statusBar()->showMessage("新游戏开始", 3000);
+    updateGameInfo();
+}
+
+void Chess::onMoveExecuted(const Move& move)
+{
+    // 添加走法到历史表格
+    int row = moveHistoryTable->rowCount();
+    moveHistoryTable->insertRow(row);
+    
+    QString moveStr = QString::fromStdString(move.toString());
+    QString moveType = "普通";
+    if (move.capturedPiece != NONE) {
+        moveType = "吃子";
+    }
+    
+    moveHistoryTable->setItem(row, 0, new QTableWidgetItem(moveStr));
+    moveHistoryTable->setItem(row, 1, new QTableWidgetItem(moveType));
+    moveHistoryTable->setItem(row, 2, new QTableWidgetItem(""));
+    moveHistoryTable->setItem(row, 3, new QTableWidgetItem(""));
+    moveHistoryTable->setItem(row, 4, new QTableWidgetItem(""));
+    
+    // 滚动到最新走法
+    moveHistoryTable->scrollToBottom();
+    
+    updateGameInfo();
+}
+
+void Chess::onGameStatusChanged(const QString& status)
+{
+    statusBar()->showMessage(status);
+}
+
+void Chess::onBoardChanged()
+{
+    updateGameInfo();
+}
+
+void Chess::onMoveFirst()
+{
+    chessBoard->goToMove(-1);
+}
+
+void Chess::onMovePrevious()
+{
+    const MoveHistory& history = chessBoard->getMoveHistory();
+    if (!history.isAtFirst()) {
+        chessBoard->goToMove(history.getCurrentIndex() - 1);
+    }
+}
+
+void Chess::onMoveNext()
+{
+    const MoveHistory& history = chessBoard->getMoveHistory();
+    if (!history.isAtLast()) {
+        chessBoard->goToMove(history.getCurrentIndex() + 1);
+    }
+}
+
+void Chess::onMoveLast()
+{
+    const MoveHistory& history = chessBoard->getMoveHistory();
+    chessBoard->goToMove(history.getMoveCount() - 1);
+}
+
+void Chess::onFlipBoard()
+{
+    // 翻转棋盘功能待实现
+    statusBar()->showMessage("翻转棋盘功能待实现", 3000);
+}
+
+void Chess::onCopyMoves()
+{
+    const MoveHistory& history = chessBoard->getMoveHistory();
+    QString moveList = QString::fromStdString(history.toMoveList());
+    QClipboard* clipboard = QApplication::clipboard();
+    clipboard->setText(moveList);
+    statusBar()->showMessage("走法已复制到剪贴板", 3000);
 }
 
 void Chess::onLoadGame()
@@ -684,5 +1191,223 @@ void Chess::onAbout()
         "• 棋谱记录与分析\n"
         "• 引擎对战支持\n"
         "• 局面评估与提示");
+}
+
+// AI引擎相关方法实现
+void Chess::setupAIEngine()
+{
+    // 创建AI引擎
+    aiEngine = new AIEngine();
+    aiEngine->setDifficulty(AI_MEDIUM);
+    aiEngine->setDebugMode(true);
+    
+    // 创建AI定时器
+    aiTimer = new QTimer(this);
+    aiTimer->setSingleShot(true);
+    connect(aiTimer, &QTimer::timeout, this, &Chess::makeAIMove);
+    
+    // 在引擎控制组中添加AI相关控件
+    if (engineGroup) {
+        QVBoxLayout* engineLayout = qobject_cast<QVBoxLayout*>(engineGroup->layout());
+        if (engineLayout) {
+            // AI难度选择
+            QHBoxLayout* difficultyLayout = new QHBoxLayout();
+            difficultyLayout->addWidget(new QLabel("AI难度:"));
+            
+            aiDifficultyCombo = new QComboBox();
+            aiDifficultyCombo->addItem("简单", AI_EASY);
+            aiDifficultyCombo->addItem("中等", AI_MEDIUM);
+            aiDifficultyCombo->addItem("困难", AI_HARD);
+            aiDifficultyCombo->addItem("专家", AI_EXPERT);
+            aiDifficultyCombo->setCurrentIndex(1); // 默认中等
+            
+            connect(aiDifficultyCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                    this, &Chess::onAIDifficultyChanged);
+            
+            difficultyLayout->addWidget(aiDifficultyCombo);
+            engineLayout->addLayout(difficultyLayout);
+            
+            // AI控制按钮
+            QHBoxLayout* aiButtonLayout = new QHBoxLayout();
+            
+            aiMoveButton = new QPushButton("AI走棋");
+            connect(aiMoveButton, &QPushButton::clicked, this, &Chess::onAIMove);
+            aiButtonLayout->addWidget(aiMoveButton);
+            
+            stopAIButton = new QPushButton("停止AI");
+            stopAIButton->setEnabled(false);
+            connect(stopAIButton, &QPushButton::clicked, this, &Chess::onStopAI);
+            aiButtonLayout->addWidget(stopAIButton);
+            
+            engineLayout->addLayout(aiButtonLayout);
+            
+            // AI状态标签
+            aiStatusLabel = new QLabel("AI就绪");
+            aiStatusLabel->setStyleSheet("color: green;");
+            engineLayout->addWidget(aiStatusLabel);
+        }
+    }
+    
+    // 连接引擎启用复选框
+    if (engineEnabledCheck) {
+        connect(engineEnabledCheck, &QCheckBox::toggled, this, &Chess::onAIEnabled);
+    }
+    
+    // 连接深度和时间控制
+    if (engineDepthSpinBox) {
+        connect(engineDepthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+                this, &Chess::onAIDepthChanged);
+    }
+    
+    if (engineTimeSpinBox) {
+        connect(engineTimeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+                this, &Chess::onAITimeChanged);
+    }
+}
+
+void Chess::updateAIControls()
+{
+    if (!aiEngine) return;
+    
+    bool gameActive = !chessBoard->isGameOver();
+    bool canAIMove = gameActive && aiEnabled && !aiThinking;
+    
+    if (aiMoveButton) {
+        aiMoveButton->setEnabled(canAIMove);
+    }
+    
+    if (stopAIButton) {
+        stopAIButton->setEnabled(aiThinking);
+    }
+    
+    if (aiStatusLabel) {
+        if (aiThinking) {
+            aiStatusLabel->setText("AI思考中...");
+            aiStatusLabel->setStyleSheet("color: orange;");
+        } else if (aiEnabled) {
+            aiStatusLabel->setText("AI就绪");
+            aiStatusLabel->setStyleSheet("color: green;");
+        } else {
+            aiStatusLabel->setText("AI已禁用");
+            aiStatusLabel->setStyleSheet("color: gray;");
+        }
+    }
+    
+    if (thinkingProgress) {
+        thinkingProgress->setVisible(aiThinking);
+        if (aiThinking) {
+            thinkingProgress->setRange(0, 0); // 无限进度条
+        }
+    }
+}
+
+void Chess::makeAIMove()
+{
+    if (!aiEngine || !chessBoard || aiThinking) return;
+    
+    aiThinking = true;
+    updateAIControls();
+    
+    // 获取当前棋盘状态
+    ChessEngine& engine = chessBoard->engine;
+    bool isRedTurn = engine.isRedTurn();
+    
+    // AI思考
+    Move aiMove = aiEngine->getBestMove(engine, isRedTurn);
+    
+    aiThinking = false;
+    updateAIControls();
+    
+    if (aiMove.isValid()) {
+        // 执行AI走法
+        bool success = chessBoard->makeMove(aiMove.fromRow, aiMove.fromCol, 
+                                          aiMove.toRow, aiMove.toCol);
+        
+        if (success) {
+            QString moveStr = QString("AI走法: %1").arg(QString::fromStdString(aiMove.toString()));
+            statusBar()->showMessage(moveStr, 3000);
+            
+            // 显示AI分析信息
+            if (aiStatusLabel) {
+                QString info = QString("评分: %1, %2")
+                    .arg(aiEngine->evaluatePosition(engine, isRedTurn))
+                    .arg(QString::fromStdString(aiEngine->getSearchInfo()));
+                aiStatusLabel->setToolTip(info);
+            }
+        } else {
+            statusBar()->showMessage("AI走法执行失败", 3000);
+        }
+    } else {
+        statusBar()->showMessage("AI无法找到合法走法", 3000);
+    }
+}
+
+void Chess::onAIEnabled(bool enabled)
+{
+    aiEnabled = enabled;
+    updateAIControls();
+    
+    if (enabled) {
+        statusBar()->showMessage("AI引擎已启用", 2000);
+    } else {
+        statusBar()->showMessage("AI引擎已禁用", 2000);
+        if (aiThinking) {
+            onStopAI();
+        }
+    }
+}
+
+void Chess::onAIDifficultyChanged()
+{
+    if (!aiEngine || !aiDifficultyCombo) return;
+    
+    AIDifficulty difficulty = static_cast<AIDifficulty>(aiDifficultyCombo->currentData().toInt());
+    aiEngine->setDifficulty(difficulty);
+    
+    QString difficultyText = aiDifficultyCombo->currentText();
+    statusBar()->showMessage(QString("AI难度设置为: %1").arg(difficultyText), 2000);
+}
+
+void Chess::onAIDepthChanged(int depth)
+{
+    if (!aiEngine) return;
+    
+    aiEngine->setMaxDepth(depth);
+    statusBar()->showMessage(QString("AI搜索深度设置为: %1").arg(depth), 2000);
+}
+
+void Chess::onAITimeChanged(int timeMs)
+{
+    if (!aiEngine) return;
+    
+    double timeSeconds = timeMs / 1000.0;
+    aiEngine->setTimeLimit(timeSeconds);
+    statusBar()->showMessage(QString("AI思考时间设置为: %1秒").arg(timeSeconds), 2000);
+}
+
+void Chess::onAIMove()
+{
+    if (!aiEngine || !chessBoard || aiThinking || chessBoard->isGameOver()) {
+        return;
+    }
+    
+    // 延迟500ms开始AI思考，让UI有时间更新
+    aiTimer->start(500);
+}
+
+void Chess::onStopAI()
+{
+    if (aiEngine) {
+        aiEngine->stopThinking();
+    }
+    
+    if (aiTimer && aiTimer->isActive()) {
+        aiTimer->stop();
+    }
+    
+    aiThinking = false;
+    updateAIControls();
+    
+    statusBar()->showMessage("AI思考已停止", 2000);
 }
 

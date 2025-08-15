@@ -13,31 +13,20 @@
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QProgressBar>
+#include <QtWidgets/QTableWidget>
+#include <QtWidgets/QDockWidget>
 #include <QPainter>
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPoint>
 #include <QVector>
+#include <QClipboard>
+#include <QApplication>
+#include <QTimer>
 #include "ui_Chess.h"
-
-// 棋子类型枚举
-enum PieceType {
-    NONE = 0,
-    RED_KING,    // 红帅
-    RED_ADVISOR, // 红仕
-    RED_BISHOP,  // 红相
-    RED_KNIGHT,  // 红马
-    RED_ROOK,    // 红车
-    RED_CANNON,  // 红炮
-    RED_PAWN,    // 红兵
-    BLACK_KING,  // 黑将
-    BLACK_ADVISOR, // 黑士
-    BLACK_BISHOP,  // 黑象
-    BLACK_KNIGHT,  // 黑马
-    BLACK_ROOK,    // 黑车
-    BLACK_CANNON,  // 黑炮
-    BLACK_PAWN     // 黑卒
-};
+#include "ChessEngine.h"
+#include "MoveHistory.h"
+#include "AIEngine.h"
 
 // 棋子显示样式枚举
 enum PieceStyle {
@@ -78,6 +67,25 @@ public:
     ChessBoard(QWidget *parent = nullptr);
     ~ChessBoard();
     void initializeBoard();
+    
+    // 游戏控制
+    bool makeMove(int fromRow, int fromCol, int toRow, int toCol);
+    void undoMove();
+    void redoMove();
+    void goToMove(int index);
+    
+    // 状态查询
+    bool isGameOver() const;
+    bool isRedTurn() const;
+    QString getGameStatus() const;
+    
+    // 棋盘状态
+    void setBoard(const PieceType board[10][9]);
+    void copyBoard(PieceType board[10][9]) const;
+    
+    // 走法历史
+    const MoveHistory& getMoveHistory() const { return moveHistory; }
+    void setMoveHistory(const MoveHistory& history);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -87,15 +95,25 @@ protected:
 public slots:
     void setPieceStyle(PieceStyle style);
     
+signals:
+    void moveExecuted(const Move& move);
+    void gameStatusChanged(const QString& status);
+    void boardChanged();
+    
 private:
     void drawBoard(QPainter &painter);
     void drawPieces(QPainter &painter);
     void drawPiece(QPainter &painter, int x, int y, PieceType piece);
     void drawPieceWithFont(QPainter &painter, int x, int y, PieceType piece);
     void drawPieceWithImage(QPainter &painter, int x, int y, PieceType piece);
+    void drawSelection(QPainter &painter);
+    void drawValidMoves(QPainter &painter);
     QPoint boardToPixel(int row, int col);
     QPoint pixelToBoard(QPoint pixel);
     QColor getPieceColor(PieceType piece);
+    
+    void updateGameStatus();
+    void highlightValidMoves();
     
     PieceStyleManager& styleManager;
 
@@ -105,10 +123,14 @@ private:
     static const int CELL_SIZE = 50;    // 每个格子的大小
     static const int BOARD_MARGIN = 50; // 棋盘边距
     
-    PieceType board[BOARD_HEIGHT][BOARD_WIDTH]; // 棋盘状态
-    QPoint selectedPos; // 选中的位置
-    bool pieceSelected; // 是否有棋子被选中
-    QPoint mousePos;    // 鼠标位置
+    ChessEngine engine;         // 象棋引擎
+    MoveHistory moveHistory;    // 走法历史
+    
+    QPoint selectedPos;         // 选中的位置
+    bool pieceSelected;         // 是否有棋子被选中
+    QPoint mousePos;            // 鼠标位置
+    std::vector<Move> validMoves; // 当前选中棋子的合法走法
+    QString gameStatus;         // 游戏状态信息
 };
 
 class Chess : public QMainWindow
@@ -126,10 +148,35 @@ private slots:
     void onSettings();
     void onAbout();
     void onStyleChanged();
+    
+    // 棋盘事件处理
+    void onMoveExecuted(const Move& move);
+    void onGameStatusChanged(const QString& status);
+    void onBoardChanged();
+    
+    // 走法导航
+    void onMoveFirst();
+    void onMovePrevious();
+    void onMoveNext();
+    void onMoveLast();
+    void onFlipBoard();
+    void onCopyMoves();
+    
+    // AI相关槽函数
+    void onAIEnabled(bool enabled);
+    void onAIDifficultyChanged();
+    void onAIDepthChanged(int depth);
+    void onAITimeChanged(int timeMs);
+    void onAIMove();
+    void onStopAI();
 
 private:
     void updateGameInfo();
     void setupStyleMenu();
+    void initializeNewControls();
+    void setupAIEngine();
+    void updateAIControls();
+    void makeAIMove();
     // void setupUI();
     // void setupMenuBar();
     // void setupToolBar();
@@ -142,29 +189,75 @@ private:
 private:
     Ui::ChessClass ui;
     
-    // 右侧控制面板组件
-    QWidget *controlPanel;
-    QGroupBox *gameControlGroup;
-    QGroupBox *engineGroup;
-    QGroupBox *analysisGroup;
-    QGroupBox *settingsGroup;
+    // UI控件指针 - 4个独立的dock窗口
+    QDockWidget *gameControlDockWidget;
+    QDockWidget *timeControlDockWidget;
+    QDockWidget *engineControlDockWidget;
+    QDockWidget *moveHistoryDockWidget;
     
+    QGroupBox *gameControlGroup;
+    QGroupBox *timeControlGroup;
+    QGroupBox *engineGroup;
+    QGroupBox *navigationGroup;
+    QGroupBox *moveHistoryGroup;
+    
+    // 游戏控制按钮
     QPushButton *newGameBtn;
     QPushButton *loadGameBtn;
     QPushButton *saveGameBtn;
     QPushButton *undoBtn;
     QPushButton *redoBtn;
-    QPushButton *analyzeBtn;
-    QPushButton *hintBtn;
     
-    QTextEdit *moveHistory;
-    QTextEdit *engineOutput;
+    // 时间控制标签
+    QLabel *blackTimeLabel;
+    QLabel *blackUsedTimeLabel;
+    QLabel *blackLastMoveLabel;
+    QLabel *blackRemainingLabel;
+    QLabel *redTimeLabel;
+    QLabel *redUsedTimeLabel;
+    QLabel *redLastMoveLabel;
+    QLabel *redRemainingLabel;
+    
+    // 引擎控制组件
+    QPushButton *addEngineButton;
+    QPushButton *engineManageButton;
+    QPushButton *multiEngineButton;
+    QPushButton *deleteEngineButton;
+    QCheckBox *engineEnabledCheck;
+    QComboBox *engineComboBox;
+    QSpinBox *engineDepthSpinBox;
+    QSpinBox *engineTimeSpinBox;
+    
+    // 导航按钮
+    QPushButton *firstMoveButton;
+    QPushButton *prevMoveButton;
+    QPushButton *nextMoveButton;
+    QPushButton *lastMoveButton;
+    QPushButton *openBookButton;
+    
+    // 棋谱导航组件
+    QTableWidget *moveHistoryTable;
+    QLabel *moveAnalysisLabel;
+    QPushButton *moveFirstButton;
+    QPushButton *movePrevButton;
+    QPushButton *moveNextButton;
+    QPushButton *moveLastButton;
+    QPushButton *flipBoardButton;
+    QPushButton *copyButton;
+    
     QLabel *statusLabel;
     QProgressBar *thinkingProgress;
     
-    QCheckBox *autoPlayCheck;
-    QCheckBox *showHintsCheck;
-    QComboBox *difficultyCombo;
-    QSpinBox *thinkTimeSpinBox;
+    // AI引擎相关
+    AIEngine *aiEngine;
+    bool aiEnabled;
+    bool aiThinking;
+    QTimer *aiTimer;
+    
+    // AI难度设置
+    QComboBox *aiDifficultyCombo;
+    QPushButton *aiMoveButton;
+    QPushButton *stopAIButton;
+    QLabel *aiStatusLabel;
 };
 

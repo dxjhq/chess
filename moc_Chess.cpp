@@ -39,16 +39,32 @@ template <> constexpr inline auto ChessBoard::qt_create_metaobjectdata<qt_meta_t
     namespace QMC = QtMocConstants;
     QtMocHelpers::StringRefStorage qt_stringData {
         "ChessBoard",
-        "setPieceStyle",
+        "moveExecuted",
         "",
+        "Move",
+        "move",
+        "gameStatusChanged",
+        "status",
+        "boardChanged",
+        "setPieceStyle",
         "PieceStyle",
         "style"
     };
 
     QtMocHelpers::UintData qt_methods {
-        // Slot 'setPieceStyle'
-        QtMocHelpers::SlotData<void(PieceStyle)>(1, 2, QMC::AccessPublic, QMetaType::Void, {{
+        // Signal 'moveExecuted'
+        QtMocHelpers::SignalData<void(const Move &)>(1, 2, QMC::AccessPublic, QMetaType::Void, {{
             { 0x80000000 | 3, 4 },
+        }}),
+        // Signal 'gameStatusChanged'
+        QtMocHelpers::SignalData<void(const QString &)>(5, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { QMetaType::QString, 6 },
+        }}),
+        // Signal 'boardChanged'
+        QtMocHelpers::SignalData<void()>(7, 2, QMC::AccessPublic, QMetaType::Void),
+        // Slot 'setPieceStyle'
+        QtMocHelpers::SlotData<void(PieceStyle)>(8, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { 0x80000000 | 9, 10 },
         }}),
     };
     QtMocHelpers::UintData qt_properties {
@@ -73,9 +89,20 @@ void ChessBoard::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
     auto *_t = static_cast<ChessBoard *>(_o);
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
-        case 0: _t->setPieceStyle((*reinterpret_cast< std::add_pointer_t<PieceStyle>>(_a[1]))); break;
+        case 0: _t->moveExecuted((*reinterpret_cast< std::add_pointer_t<Move>>(_a[1]))); break;
+        case 1: _t->gameStatusChanged((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 2: _t->boardChanged(); break;
+        case 3: _t->setPieceStyle((*reinterpret_cast< std::add_pointer_t<PieceStyle>>(_a[1]))); break;
         default: ;
         }
+    }
+    if (_c == QMetaObject::IndexOfMethod) {
+        if (QtMocHelpers::indexOfMethod<void (ChessBoard::*)(const Move & )>(_a, &ChessBoard::moveExecuted, 0))
+            return;
+        if (QtMocHelpers::indexOfMethod<void (ChessBoard::*)(const QString & )>(_a, &ChessBoard::gameStatusChanged, 1))
+            return;
+        if (QtMocHelpers::indexOfMethod<void (ChessBoard::*)()>(_a, &ChessBoard::boardChanged, 2))
+            return;
     }
 }
 
@@ -98,16 +125,34 @@ int ChessBoard::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 1)
+        if (_id < 4)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 1;
+        _id -= 4;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 1)
+        if (_id < 4)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 1;
+        _id -= 4;
     }
     return _id;
+}
+
+// SIGNAL 0
+void ChessBoard::moveExecuted(const Move & _t1)
+{
+    QMetaObject::activate<void>(this, &staticMetaObject, 0, nullptr, _t1);
+}
+
+// SIGNAL 1
+void ChessBoard::gameStatusChanged(const QString & _t1)
+{
+    QMetaObject::activate<void>(this, &staticMetaObject, 1, nullptr, _t1);
+}
+
+// SIGNAL 2
+void ChessBoard::boardChanged()
+{
+    QMetaObject::activate(this, &staticMetaObject, 2, nullptr);
 }
 namespace {
 struct qt_meta_tag_ZN5ChessE_t {};
@@ -124,7 +169,19 @@ template <> constexpr inline auto Chess::qt_create_metaobjectdata<qt_meta_tag_ZN
         "onSaveGame",
         "onSettings",
         "onAbout",
-        "onStyleChanged"
+        "onStyleChanged",
+        "onMoveExecuted",
+        "Move",
+        "move",
+        "onGameStatusChanged",
+        "status",
+        "onBoardChanged",
+        "onMoveFirst",
+        "onMovePrevious",
+        "onMoveNext",
+        "onMoveLast",
+        "onFlipBoard",
+        "onCopyMoves"
     };
 
     QtMocHelpers::UintData qt_methods {
@@ -140,6 +197,28 @@ template <> constexpr inline auto Chess::qt_create_metaobjectdata<qt_meta_tag_ZN
         QtMocHelpers::SlotData<void()>(6, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'onStyleChanged'
         QtMocHelpers::SlotData<void()>(7, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'onMoveExecuted'
+        QtMocHelpers::SlotData<void(const Move &)>(8, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { 0x80000000 | 9, 10 },
+        }}),
+        // Slot 'onGameStatusChanged'
+        QtMocHelpers::SlotData<void(const QString &)>(11, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::QString, 12 },
+        }}),
+        // Slot 'onBoardChanged'
+        QtMocHelpers::SlotData<void()>(13, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'onMoveFirst'
+        QtMocHelpers::SlotData<void()>(14, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'onMovePrevious'
+        QtMocHelpers::SlotData<void()>(15, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'onMoveNext'
+        QtMocHelpers::SlotData<void()>(16, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'onMoveLast'
+        QtMocHelpers::SlotData<void()>(17, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'onFlipBoard'
+        QtMocHelpers::SlotData<void()>(18, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'onCopyMoves'
+        QtMocHelpers::SlotData<void()>(19, 2, QMC::AccessPrivate, QMetaType::Void),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -169,10 +248,18 @@ void Chess::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void 
         case 3: _t->onSettings(); break;
         case 4: _t->onAbout(); break;
         case 5: _t->onStyleChanged(); break;
+        case 6: _t->onMoveExecuted((*reinterpret_cast< std::add_pointer_t<Move>>(_a[1]))); break;
+        case 7: _t->onGameStatusChanged((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 8: _t->onBoardChanged(); break;
+        case 9: _t->onMoveFirst(); break;
+        case 10: _t->onMovePrevious(); break;
+        case 11: _t->onMoveNext(); break;
+        case 12: _t->onMoveLast(); break;
+        case 13: _t->onFlipBoard(); break;
+        case 14: _t->onCopyMoves(); break;
         default: ;
         }
     }
-    (void)_a;
 }
 
 const QMetaObject *Chess::metaObject() const
@@ -194,14 +281,14 @@ int Chess::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 6)
+        if (_id < 15)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 6;
+        _id -= 15;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 6)
+        if (_id < 15)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 6;
+        _id -= 15;
     }
     return _id;
 }

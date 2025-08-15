@@ -79,7 +79,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -93,7 +93,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
@@ -104,8 +104,16 @@
     <QtUic Include="Chess.ui" />
     <QtMoc Include="Chess.h" />
     <ClCompile Include="Chess.cpp" />
+    <ClCompile Include="ChessEngine.cpp" />
+    <ClCompile Include="MoveHistory.cpp" />
+    <ClCompile Include="AIEngine.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="moc_Chess.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ChessEngine.h" />
+    <ClInclude Include="MoveHistory.h" />
+    <ClInclude Include="AIEngine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
